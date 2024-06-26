@@ -1,0 +1,20 @@
+---
+title: "CHANGE THE TITLE"
+format: html
+editor: visual
+self-contained: true
+---
+
+## New header
+
+Testing how to update pages
+
+```{r}
+tibble::tibble(
+  v1 = LETTERS,
+  v2 = letters
+) |> 
+  kableExtra::kbl() |> 
+  kableExtra::kable_styling()
+```
+
