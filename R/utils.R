@@ -98,10 +98,11 @@ get_ac_year <- function(switch_date = as.Date(paste0(format(Sys.Date(), "%Y"), "
 #' Canvas API operations
 #'
 #' @param search_term A string containing word or phrase (exact) in the module
-#' title to search for, OR a module code (not both!)
-#' @param academic_year A string containing the
-#'   academic year for the desired module as e.g. "22/23"; defaults to the current year as calculated by [get_ac_year()]. Does not need to be
-#'   specified for ongoing/non-academic modules
+#'   title to search for, OR a module code (not both!)
+#' @param academic_year A string containing the academic year for the desired
+#'   module as e.g. "22/23"; defaults to the current year as calculated by
+#'   [cnvs::get_ac_year()]. Does not need to be specified for ongoing/non-academic
+#'   modules
 #'
 #' @returns Canvas module ID as a numeric vector.
 #' @export
@@ -323,16 +324,18 @@ publish_module <- function(search_term){
   )
 }
 
-
-
 #' Get a tibble of all users on a module
 #'
-#' @param module_id
+#' Note that this is different from [cnvs::get_students()] as this gets all
+#' USERS including convenors, observers, DTs etc
 #'
-#' @return
+#' @param module_id A Canvas module ID number (NOT university module code).
+#'
+#' @return A tibble of user information
 #' @export
 #'
 #' @examples
+#'
 get_users <- function(module_id){
   url <- paste0(rcanvas:::canvas_url(), "/", paste("courses", module_id,
                                                    "users", sep = "/"))
@@ -343,3 +346,31 @@ get_users <- function(module_id){
   return(tibble::as_tibble(dat))
 }
 
+
+#' Get information about all students on a module
+#'
+#' @param module_id A Canvas module ID number (NOT university module code).
+#'
+#' @returns A tibble of student information
+#' @export
+#'
+#' @examples
+#'
+
+get_students <- function(module_id){
+  students <- rcanvas:::canvas_query(
+    paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/students"),
+    list(per_page = 100), "GET") |>
+    rcanvas:::paginate() |>
+    purrr::map(httr::content, "text") |>
+    purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
+    dplyr::bind_rows()
+
+  students <- students[!duplicated(students), ] |>
+    dplyr::mutate(cand_no = gsub("Candidate No : ", "", sortable_name))
+
+  students <- students |>
+    dplyr::select(-created_at, -sortable_name, -short_name, -integration_id, -pronouns) |>
+    dplyr::mutate(cand_no = as.numeric(cand_no)) |>
+    dplyr::filter(!is.na(cand_no))
+}

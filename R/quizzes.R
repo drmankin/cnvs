@@ -52,7 +52,7 @@ create_quiz_desc <- function(n_questions = 7, standard_time_limit = 20, challeng
 #'   or "C1234".
 #' @param quiz_desc Quiz description as a string, which can include basic HTML
 #'   formatting tags. If `NULL` (the default), runs
-#'   [convenrhelpr::create_quiz_desc()] with default settings. Also accepts
+#'   [cnvs::create_quiz_desc()] with default settings. Also accepts
 #'   either a single string (which will be applied to all quizzes) or a list of
 #'   two descriptions, named `practice` and `marked`. The `practice` description
 #'   will only be used if `first_quiz_practice` is `TRUE` and will be used for
@@ -288,11 +288,11 @@ update_quizzes <- function(module_code, which_week,
   if (!stringr::str_detect(module_code, "^[A-Z]?[0-9]+[A-Z]?[0-9]+"))
     stop("Module code is not specified correctly. Please enter a module code formatted as C1234 or 123C4.")
 
-  module_id <- try(convenrhelpr::get_module_id(module_code), silent = TRUE)
+  module_id <- try(cnvs::get_module_id(module_code), silent = TRUE)
 
   if(inherits(module_id, "try-error")){
-    convenrhelpr::canvas_setup()
-    module_id <- convenrhelpr::get_module_id(module_code)
+    cnvs::canvas_setup()
+    module_id <- cnvs::get_module_id(module_code)
   }
 
   assignments <- rcanvas::get_assignment_list(module_id) |> tibble::as_tibble()
