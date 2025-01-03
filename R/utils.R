@@ -47,7 +47,7 @@ canvas_setup <- function(domain = "https://canvas.sussex.ac.uk"){
 #' @export
 
 get_module_list <- function(academic_modules = FALSE, academic_year = NA_character_){
-  module_list <- rcanvas::get_course_list() |>
+  module_list <- rcanvas::get_course_list()[[1]] |>
     tibble::as_tibble()
 
   if(academic_modules == TRUE){
