@@ -110,7 +110,7 @@ get_ac_year <- function(switch_date = as.Date(paste0(format(Sys.Date(), "%Y"), "
 get_module_id <- function(search_term, academic_year){
 
   if(missing(academic_year)){
-    academic_year <- get_ac_year()
+    academic_year <- cnvs::get_ac_year()
     message(paste("Using current year", academic_year, "if necessary"))
   }
 
@@ -373,4 +373,58 @@ get_students <- function(module_id){
     dplyr::select(-created_at, -sortable_name, -short_name, -integration_id, -pronouns) |>
     dplyr::mutate(cand_no = as.numeric(cand_no)) |>
     dplyr::filter(!is.na(cand_no))
+}
+
+#' Check module code input and attempt to return the Canvas module ID
+#'
+#' @param search_term A string containing word or phrase (exact) in the module
+#'   title to search for, OR a module code (not both!)
+#' @param academic_year A string containing the academic year for the desired
+#'   module as e.g. "22/23"; defaults to the current year as calculated by
+#'   [cnvs::get_ac_year()]. Does not need to be specified for ongoing/non-academic
+#'   modules
+#'
+#' @returns Canvas module ID
+#' @export
+#'
+#' @examples
+set_module_id <- function(search_term, academic_year){
+
+  if(missing(academic_year)){
+    academic_year <- cnvs::get_ac_year()
+    message(paste("Using current year", academic_year, "if necessary"))
+  }
+
+# Try to get the Canvas module id
+module_id <- try(cnvs::get_module_id(search_term, academic_year), silent = TRUE)
+
+# If that didn't work, try running canvas_setup() to set the domain and token
+if(inherits(module_id, "try-error")){
+  cnvs::canvas_setup()
+  module_id <- cnvs::get_module_id(search_term, academic_year)
+}
+
+return(module_id)
+}
+
+#' Get a response from Canvas
+#'
+#' @param url A Canvas API URL
+#' @param args Arguments to add to the query
+#'
+#' @returns A tibble containing the requested information
+#' @export
+#'
+#' @examples
+get <- function(url, args){
+
+  args <- c(list(access_token = rcanvas:::check_token(), per_page = 100),
+            args)
+
+  resp <- rcanvas:::process_response(url, args) |>
+  dplyr::bind_rows() |>
+  dplyr::mutate(course_id = module_id)
+
+  return(resp)
+
 }

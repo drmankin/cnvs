@@ -19,7 +19,7 @@ get_submissions <- function (module_id, type, type_id)
   url <- sprintf("%scourses/%s/%s/%s/submissions", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id, type, type_id)
   args <- list(access_token = rcanvas:::check_token(), per_page = 100)
-  rcanvas:::process_response(url, args) %>% dplyr::bind_rows() %>% dplyr::mutate(course_id = module_id)
+  rcanvas:::process_response(url, args) |>  dplyr::bind_rows() |>  dplyr::mutate(course_id = module_id)
 }
 
 #' Calculate "best-of" quiz marks
