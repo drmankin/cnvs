@@ -1,0 +1,46 @@
+---
+title: "week_page_template"
+format: html
+self-contained: true
+---
+
+```{r}
+#| eval: false
+
+cnvs::canvas_setup()
+
+web_url <- "https://analysingdata.pages.dev/content"
+
+posit_url <- "htts://posit.cloud"
+
+week_number <- "01"
+
+cnvs::embed_link(link_text = "Lecture slides", web_url = file.path(web_url, "lectures", paste0("lecture_", week_number)), dest = "website", type = "html")
+```
+
+## Lecture
+
+This week's lecture will be on `lecture_title`.
+
+`r cnvs::embed_link(link_text = "Lecture slides", web_url = file.path(web_url, "lectures", paste0("lecture_", week_number)), dest = "website")`
+
+`r cnvs::embed_link(link_text = "Lecture recording", dest = "Panopto Recordings")`
+
+## Practical
+
+This week's practical will cover 
+
+## Tutorial
+
+```{r}
+type <- "tutorials"
+tut_name <- paste0("Tutorial", week_number)
+```
+
+The tutorial for this week is `r tut_name`. Work through the tutorial on Posit Cloud, or read the tutorial separately here.
+
+## Quiz
+
+`r quiz`.
+
+`r cnvs::embed_link("Go to Quizzes", "Quizzes")`

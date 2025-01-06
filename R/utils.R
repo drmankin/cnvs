@@ -56,10 +56,16 @@ get_module_list <- function(academic_modules = FALSE, academic_year = NA_charact
   }
 
   module_list <- module_list |>
-    tidyr::separate(col = sis_course_id,
-                    into = c("module_code", "term", "start_year", "end_year"),
-                    sep = "_") |>
+    tidyr::separate_wider_delim(cols = sis_course_id,
+                    names = c("module_code", "term", "start_year", "end_year"),
+                    delim = "_",
+                    too_few = "align_start",
+                    too_many = "drop") |>
     dplyr::mutate(
+      ## This is because some (small number of) sis_course_ids are not actually composed of the elements above
+      ## So this turns their module_code into NA to prevent Problems(TM)
+      module_code = ifelse(grepl(pattern = "^[A-Z]?[0-9]+[A-Z]?[0-9]+", x = module_code),
+                           yes = module_code, no = NA),
       ac_year = dplyr::case_when(
         !is.na(module_code) ~ paste0(start_year, "/", end_year),
         TRUE ~ "continuous")
@@ -110,11 +116,11 @@ get_ac_year <- function(switch_date = as.Date(paste0(format(Sys.Date(), "%Y"), "
 get_module_id <- function(search_term, academic_year){
 
   if(missing(academic_year)){
-    academic_year <- get_ac_year()
+    academic_year <- cnvs::get_ac_year()
     message(paste("Using current year", academic_year, "if necessary"))
   }
 
-  module_list <- get_module_list(academic_modules = FALSE)
+  module_list <- cnvs::get_module_list(academic_modules = FALSE)
 
   if(## Check if search term looks like a module code
     all(stringr::str_detect(search_term, "^[A-Z]?[0-9]+[A-Z]?[0-9]+"))){
@@ -263,14 +269,15 @@ cnvs_folder <- function(local_path, search_term, module_list, set_wd = FALSE, te
 #' @param web_url URL to use for "website"
 #' @param url The end of a Canvas URL - the first bit will be added
 #'   automatically up to ".../courses/module_id/".
+#' @param type What kind of link to produce - "markdown" or "html"
 #'
-#' @return A markdown-style embedded link text string
+#' @return An embedded link text string
 #' @export
 #'
 #' @examples
 #'
 
-embed_link <- function(link_text, dest, search_term, url = NULL, web_url = "https://r-training.netlify.app"){
+embed_link <- function(link_text, dest, search_term, type, url = NULL, web_url = "https://r-training.netlify.app"){
 
   if(!missing(search_term)){
     module_id <- get_module_id(search_term)
@@ -281,21 +288,44 @@ embed_link <- function(link_text, dest, search_term, url = NULL, web_url = "http
 
   all_dest <- purrr::set_names(cnvs_links, nm = cnvs_dest)
 
-  if(missing(dest) & !is.null(url)){
-    paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/", module_id, "/", url),")")
-  } else if (dest == "website"){
-    paste0("[", link_text, "](", web_url, ")")
-  } else if(dest %in% cnvs_dest){
-    paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
-                                        module_id, "/", all_dest[names(all_dest) == dest], ")"))
-  } else if(dest %in% c("Zoom", "Panopto Recordings")) {
-    paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
-                                        module_id, "/external_tools/", switch(dest,
-                                                                              Zoom = 5351,
-                                                                              `Panopto Recordings` = 3491)), ")")
-  } else {
-    paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
-                                        module_id, "/pages/", dest), ")")
+  if (type == "markdown"){
+    if(missing(dest) & !is.null(url)){
+      paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/", module_id, "/", url),")")
+    } else if (dest == "website"){
+      paste0("[", link_text, "](", web_url, ")")
+    } else if(dest %in% cnvs_dest){
+      paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
+                                          module_id, "/", all_dest[names(all_dest) == dest], ")"))
+    } else if(dest %in% c("Zoom", "Panopto Recordings")) {
+      paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
+                                          module_id, "/external_tools/", switch(dest,
+                                                                                Zoom = 5351,
+                                                                                `Panopto Recordings` = 3491)), ")")
+    } else {
+      paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
+                                          module_id, "/pages/", dest), ")")
+    }
+  }
+
+  if (type == "html"){
+    if(missing(dest) & !is.null(url)){
+      paste0("<a href='", paste0("https://canvas.sussex.ac.uk/courses/", module_id, "/", url), "'>", link_text, "</a>")
+    } else if (dest == "website"){
+      paste0("<a href='", web_url, "'>", link_text, "</a>")
+    } else if(dest %in% cnvs_dest){
+      paste0("<a href='", paste0("https://canvas.sussex.ac.uk/courses/",
+                                 module_id, "/", all_dest[names(all_dest) == dest], ")"),
+             "'>", link_text, "</a>")
+    } else if(dest %in% c("Zoom", "Panopto Recordings")) {
+      paste0("<a href='", paste0("https://canvas.sussex.ac.uk/courses/",
+                                 module_id, "/external_tools/", switch(dest,
+                                                                       Zoom = 5351,
+                                                                       `Panopto Recordings` = 3491)),
+             "'>", link_text, "</a>")
+    } else {
+      paste0("<a href='", paste0("https://canvas.sussex.ac.uk/courses/",
+                                 module_id, "/pages/", dest), "'>", link_text, "</a>")
+    }
   }
 }
 
@@ -373,4 +403,87 @@ get_students <- function(module_id){
     dplyr::select(-created_at, -sortable_name, -short_name, -integration_id, -pronouns) |>
     dplyr::mutate(cand_no = as.numeric(cand_no)) |>
     dplyr::filter(!is.na(cand_no))
+}
+
+
+
+#' Create a new section in a module
+#'
+#' @param module_id
+#' @param section_name
+#'
+#' @returns A response from Canvas.
+#' @export
+#'
+#' @examples
+create_section <- function(module_id, section_name){
+rcanvas:::canvas_query(
+  url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "sections")),
+  args = list(
+    `course_section[name]` = section_name
+  ),
+  "POST"
+)
+}
+
+#' Get all sections on a module
+#'
+#' @param module_id
+#' @param search_term Optional string to search for in section names.
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+get_sections <- function(module_id, search_term = ""){
+  rcanvas:::canvas_query(
+  url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "/sections")),
+  args = list(
+    `include[]` = "students",
+    search_term = search_term,
+    per_page = 100
+  ),
+  "GET"
+  )|>
+  rcanvas:::paginate() |>
+  purrr::map(httr::content, "text") |>
+  purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
+  dplyr::bind_rows()
+}
+
+
+#' Enroll a user in an (existing) section
+#'
+#' @param section_id ID of the section to enroll the user in
+#' @param user_id ID of the user
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+enroll_in_section <- function(section_id, user_id){
+  rcanvas:::canvas_query(
+  url = paste0(rcanvas:::canvas_url(), file.path("/sections", section_id, "enrollments")),
+  args = list(
+    `enrollment[user_id]` = user_id
+  ),
+  "POST"
+)
+}
+
+
+#' Calculate the date of the next weekday
+#'
+#' Taken from a [stack overflow solution by TimTeaFan](https://stackoverflow.com/questions/57893554/get-next-wednesday-date-after-a-date-with-r)
+#'
+#' @param date A datetime
+#' @param weekday A day of the week as a number, with 1 = Sunday and 7 = Saturday
+#'
+#' @returns The date of the next [weekday] after the given [date]
+#' @export
+#'
+#' @examples
+#'
+next_weekday <- function(date, weekday){
+  date + (seq(weekday - 1, length = 7) %% 7 + 1L)[8 - lubridate::wday(date)]
 }

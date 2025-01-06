@@ -1,0 +1,221 @@
+---
+title: "Module Setup"
+format: html
+editor: visual
+---
+
+## Getting Started
+
+Hello! Oof, start of term huh? That's rough, buddy. Don't worry though - {cnvs} is here to help!
+
+To get started, you need to install the package. Then, you'll need to set up your Canvas token and domain name. (If you don't know how to do this, see `?cnvs::canvas_setup().`) Then run the code below.
+
+```{r}
+#| eval: false
+library(cnvs)
+
+cnvs::canvas_setup()
+```
+
+To make things easier later on, also set up the information about the module you're working on.
+
+```{r}
+## Update as necessary
+module_code <- "C8891"
+academic_year <- "24/25"
+
+module_id <- cnvs::get_module_id(module_code, academic_year)
+```
+
+## Quizzes
+
+Batch-creating quizzes has three steps. We'll run through this for marked quizzes, then again for ChallengRs.
+
+Let's first set up some objects to use.
+
+```{r}
+n_questions <- 5#<1>
+standard_time_limit <- 12 #<2>
+```
+
+1.  How many questions per quiz
+2.  The "normal" time limit (with no RAs)
+
+### Create Descriptions
+
+First, we create the descriptions for the quizzes that will be inserted for every quiz, using the settings from above.
+
+```{r}
+quiz_desc <- cnvs::create_quiz_desc(
+  n_questions = n_questions, 
+  standard_time_limit = standard_time_limit
+)
+```
+
+### Create Quiz Info
+
+Next, we generate the metadata, or settings, for the quizzes. Check the timetable for the time and date information.
+
+```{r}
+quiz_info <- create_quiz_info(module_code, #<1>
+                              quiz_desc = quiz_desc, #<2>
+                              first_unlock_date = "2025/01/27", #<3>
+                              unlock_time = 9,#<4>
+                              last_lock_date = "2025/04/11",#<5>
+                              lock_time = 16,#<6>
+                              mopup_day = "Sunday", #<7>
+                              quiz_type = "assignment",#<8>
+                              make_practice = c(1, 2, 7),#<9>
+                              quiz_name_fn = function(x) paste("Week", x, "Worksheet", collapse = " "),#<10>
+                              standard_time_limit = standard_time_limit,#<11>
+                              has_break_weeks = FALSE, #<12>
+                              break_weeks = NULL,#<13>
+                              challengr = FALSE)#<14>
+```
+
+1.  Module code, e.g. "C8891", NOT module ID
+2.  Quiz description object, from `create_quiz_desc()` above. If left blank will run `create_quiz_desc()` with default settings.
+3.  Date of the first quiz to create, either marked or practice; typically Monday of Week 1.
+4.  Time the quiz should unlock each week (must be before or at the beginning of the first practical)
+5.  Date the last quiz will end, typically Friday of Week 11.
+6.  Time the quiz should lock each week (must be after the end of the last practical)
+7.  If there is a "Mop-up Day" when students who missed the quiz can take the quiz, what day of the week is it? This will adjust the lock dates for each quiz if the mop-up day is after the last quiz date, except for the last week.
+8.  What type of quizzes to create
+9.  Which week(s) of term to make practice quizzes instead of marked (assignment) quizzes
+10. Function to use to generate quiz titles; this is the default
+11. The "normal" time limit (with no RAs); created above
+12. Are there break weeks (e.g. Spring break) inside term time?
+13. If there are break weeks, which they are (numerically, counting from Week 1). In 24/25 there aren't any.
+14. Whether the quizzes to be created are ChallengRs.
+
+::: callout-important
+Don't forget to check the `quiz_info` object carefully to make sure the dates, times, and other settings are all correct!
+:::
+
+### Create Quizzes
+
+Easier than you might have thought! Loop over the `quiz_info` object above and feed into `cnvs::create_quizzes()` which will create the quizzes on Canvas. 
+
+```{r}
+purrr::pmap(quiz_info, cnvs::create_quizzes)
+```
+
+`r cnvs::embed_link("Check your Canvas site to see the quizzes!", "Quizzes")` If you got something other than 200s in response - sorry, you've got some debugging to do :(
+
+### Create ChallengRs
+
+The whole sequence again, but now for ChallengRs. We actually don't need to run `cnvs::create_quiz_desc()` first, because it will be run inside `cnvs::create_quiz_info()` if no description is provided.
+
+Setting `challengr = TRUE` has a few implications:
+
+- All quizzes will lock at the last lock date and time, rather than each week.
+- Unlimited attempts are allowed, and there is no access code.
+- If no `quiz_name_fn` is provided, it will generate names on the pattern of "Week X ChallengR"
+
+```{r}
+
+challengr_info <- create_quiz_info(module_code, #<1>
+                              first_unlock_date = "2025/01/27", #<1>
+                              unlock_time = 9,#<1>
+                              last_lock_date = "2025/04/11",#<1>
+                              lock_time = 16,#<1>
+                              has_break_weeks = FALSE, #<1>
+                              break_weeks = NULL,#<1>
+                              challengr = TRUE)#<2>  
+
+purrr::pmap(challengr_info, cnvs::create_quizzes)
+```
+
+1. All the same information as above for marked quizzes. Omitted arguments will be set automatically or are not necessary for ChallengRs.
+2. Turn on ChallengRs
+3. Post the ChallengRs on Canvas
+
+### Updating Details
+
+You can always make changes to the quizzes later. The `cnvs::update_quizzes()` function provides a shortcut for a few common tasks. Here's an example updating the descriptions of multiple quizzes.
+
+```{r}
+#| eval: false
+
+## Generate new descriptions manually, or with the function
+
+new_desc <- cnvs::create_quiz_desc(n_questions = 5, standard_time_limit = 12)
+
+# Get IDs of quizzes to update - in this case, all the marked quizzes
+these_quizzes <- cnvs::get_all_quizzes(module_id) |> 
+  dplyr::filter(quiz_type == "assignment") |> 
+  dplyr::pull(id)
+
+# Post the new descriptions
+purrr::map(.x = these_quizzes,
+           .f = ~cnvs::update_quizzes(module_id = module_id,
+                     quiz_id = .x,
+                     task = "update_description",
+                     description = new_desc$marked)
+)
+```
+
+
+## Creating Content
+
+### Pages
+
+
+
+### Announcements
+
+
+
+## Automatic Updating
+
+### Release Quiz Answers and Publish
+
+This code can be put in a separate script to run regularly each week. It assumes that it is running the day after the "mop-up" quiz closes and before the unlock time of the next quiz. It will both release the correct answers for the quiz that has just finished, and publish the upcoming quiz.
+
+```{r}
+#| eval: false
+
+cnvs::canvas_setup()
+
+module_code <- "C8891"
+
+module_id <- cnvs::get_module_id(module_code)
+
+quizzes <- cnvs::get_all_quizzes(module_id)
+
+date <- as.Date("2025/04/13")
+
+## Calculate time difference between now and quiz lock dates
+find_quiz <- quizzes |> 
+  dplyr::filter(grepl("Worksheet", title)) |> 
+  dplyr::mutate(lock_diff = as.numeric(as.Date(lock_at) - date) |> abs(), 
+                unlock_diff = as.numeric(as.Date(unlock_at) - date) |> abs(), 
+                .before = 1)
+
+quiz_to_release <- find_quiz |>
+  dplyr::filter(lock_diff == min(lock_diff))
+
+if(quiz_to_release$lock_diff >= 7){
+  message("No recent quizzes to release answers for; no changes made")
+} else {
+  cnvs::update_quizzes(module_id = module_id,
+                     quiz_id = quiz_to_release$id,
+                     task = "release_answers")
+}
+
+quiz_to_publish <- find_quiz |> 
+  dplyr::filter(unlock_diff == min(unlock_diff))
+  
+cnvs::update_quizzes(module_id = module_id,
+                     quiz_id = quiz_to_publish$id,
+                     task = "publish")
+
+## This will need to be updated in the future for years where the spring break falls in the middle of term
+```
+
+
+### Update Access Code
+
+
+
+

@@ -17,4 +17,3 @@ tibble::tibble(
   kableExtra::kbl() |> 
   kableExtra::kable_styling()
 ```
-
