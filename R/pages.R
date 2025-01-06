@@ -41,7 +41,7 @@ quarto_page <- function(module_id, file_path, syllabus = FALSE, page_id = "", pa
   }
 
   ## Render the document
-  quarto::quarto_render(file_path)
+  quarto::quarto_render(file_path, quiet = TRUE)
 
   ## Read the html
   page_html <- readLines(gsub("qmd", "html", file_path))
