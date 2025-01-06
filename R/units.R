@@ -9,8 +9,7 @@
 #'
 #' @returns A tibble of all units matching the search term, if provided; or only ID code(s), if id_only is TRUE.
 #' @export
-#'
-#' @examples
+
 get_units <- function(module_id, search_term = NULL, id_only = FALSE){
 
   url <- paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/modules")
@@ -33,6 +32,15 @@ get_units <- function(module_id, search_term = NULL, id_only = FALSE){
 
   return(units)
 }
+
+#' Add an (existing) page to a unit
+#'
+#' @param module_id Canvas module ID number
+#' @param unit_search_term String to match the unit name - MUST match case!
+#' @param page_search_term String to match the page name - does not need to match case
+#'
+#' @returns Response from Canvas
+#' @export
 
 add_page_to_unit <- function(module_id, unit_search_term, page_search_term){
 

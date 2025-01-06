@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-#'
+#' \dontrun{get_submissions("123C4", type = assignments, type_id = 123456)}
 
 get_submissions <- function (module_id, type, type_id, add_args = list())
 {
@@ -34,10 +34,11 @@ get_submissions <- function (module_id, type, type_id, add_args = list())
 #'
 #' @param module_id A Canvas module ID number (NOT university module code).
 #'
-#' @returns
+#' @returns A tibble of information about all quizzes on the module.
 #' @export
 #'
 #' @examples
+#' \dontrun{get_all_quizzes(module_id = 12345)}
 get_all_quizzes <- function(module_id){
   url <- sprintf("%scourses/%s/quizzes", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id)
@@ -55,8 +56,7 @@ get_all_quizzes <- function(module_id){
 #'
 #' @returns A tibble of information about each question in the quiz.
 #' @export
-#'
-#' @examples
+
 get_quiz_questions <- function(module_id, quiz_id){
   url <- sprintf("%scourses/%s/quizzes/%s/questions", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id, quiz_id)
@@ -77,8 +77,7 @@ get_quiz_questions <- function(module_id, quiz_id){
 #'
 #' @returns A long-form tibble of all submitted responses to all questions by everyone who submitted the quiz.
 #' @export
-#'
-#' @examples
+
 get_submitted_responses <- function(module_id, type_id){
   quiz_subs <- cnvs::get_submissions(module_id = module_id,
                                      type = "assignments",
@@ -104,8 +103,7 @@ get_submitted_responses <- function(module_id, type_id){
 #'   Note that these are matched by the name/title of the quiz so THEY MUST BE
 #'   UNIQUE.
 #' @export
-#'
-#' @examples
+
 get_quiz_info <- function(module_id){
   quizzes <- cnvs::get_all_quizzes(module_id)
 
@@ -133,8 +131,7 @@ get_quiz_info <- function(module_id){
 #' @returns A tibble of information about all submissions for all students for
 #'   all quizzes on a module
 #' @export
-#'
-#' @examples
+
 get_quiz_marks <- function(module_code,
                            academic_year,
                            quiz_title = "Worksheet"){
@@ -242,8 +239,7 @@ get_quiz_marks <- function(module_code,
 #' @returns A list with three elements: $marks, a tibble of quiz marks for all
 #'   students, and $dist, a histogram of the distribution of those marks
 #' @export
-#'
-#' @examples
+
 calc_quiz_marks <- function(module_code,
                            academic_year,
                            quiz_title = "Worksheet",

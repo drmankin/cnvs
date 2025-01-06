@@ -187,8 +187,6 @@ get_module_id <- function(search_term, academic_year){
 #'   [get_module_list()]. If none provided, runs [get_module_list()].
 #' @returns A new file folder as a subfolder of `local_path`, named "module_id
 #'   Full Name Of Canvas Module", and the module path as a string
-#' @examples
-#' create_cnvs_folder("C:/Users/Canvas", "My Canvas Site")
 #'
 #' @export
 
@@ -273,9 +271,6 @@ cnvs_folder <- function(local_path, search_term, module_list, set_wd = FALSE, te
 #'
 #' @return An embedded link text string
 #' @export
-#'
-#' @examples
-#'
 
 embed_link <- function(link_text, dest, search_term, type, url = NULL, web_url = "https://r-training.netlify.app"){
 
@@ -337,9 +332,6 @@ embed_link <- function(link_text, dest, search_term, type, url = NULL, web_url =
 #'
 #' @return Reply from Canvas
 #' @export
-#'
-#' @examples
-#'
 
 publish_module <- function(search_term){
 
@@ -363,9 +355,7 @@ publish_module <- function(search_term){
 #'
 #' @return A tibble of user information
 #' @export
-#'
-#' @examples
-#'
+
 get_users <- function(module_id){
   url <- paste0(rcanvas:::canvas_url(), "/", paste("courses", module_id,
                                                    "users", sep = "/"))
@@ -383,9 +373,7 @@ get_users <- function(module_id){
 #'
 #' @returns A tibble of student information
 #' @export
-#'
-#' @examples
-#'
+
 
 get_students <- function(module_id){
   students <- rcanvas:::canvas_query(
@@ -407,13 +395,12 @@ get_students <- function(module_id){
 
 #' Create a new section in a module
 #'
-#' @param module_id
-#' @param section_name
+#' @param module_id Canvas module ID number
+#' @param section_name Name to give the new section
 #'
 #' @returns A response from Canvas.
 #' @export
-#'
-#' @examples
+
 create_section <- function(module_id, section_name){
 rcanvas:::canvas_query(
   url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "sections")),
@@ -426,13 +413,12 @@ rcanvas:::canvas_query(
 
 #' Get all sections on a module
 #'
-#' @param module_id
+#' @param module_id Canvas module ID number
 #' @param search_term Optional string to search for in section names.
 #'
-#' @returns
+#' @returns Tibble of information about sections
 #' @export
-#'
-#' @examples
+
 get_sections <- function(module_id, search_term = ""){
   rcanvas:::canvas_query(
   url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "/sections")),
@@ -455,10 +441,9 @@ get_sections <- function(module_id, search_term = ""){
 #' @param section_id ID of the section to enroll the user in
 #' @param user_id ID of the user
 #'
-#' @returns
+#' @returns Response from Canvas
 #' @export
-#'
-#' @examples
+
 enroll_in_section <- function(section_id, user_id){
   rcanvas:::canvas_query(
   url = paste0(rcanvas:::canvas_url(), file.path("/sections", section_id, "enrollments")),
@@ -479,9 +464,7 @@ enroll_in_section <- function(section_id, user_id){
 #'
 #' @returns The date of the next [weekday] after the given [date]
 #' @export
-#'
-#' @examples
-#'
+
 next_weekday <- function(date, weekday){
   date + (seq(weekday - 1, length = 7) %% 7 + 1L)[8 - lubridate::wday(date)]
 }
@@ -497,8 +480,7 @@ next_weekday <- function(date, weekday){
 #'
 #' @returns Canvas module ID
 #' @export
-#'
-#' @examples
+
 set_module_id <- function(search_term, academic_year){
 
   if(missing(academic_year)){
@@ -525,9 +507,8 @@ return(module_id)
 #'
 #' @returns A tibble containing the requested information
 #' @export
-#'
-#' @examples
-get <- function(url, args){
+
+get_resp <- function(url, args){
 
   args <- c(list(access_token = rcanvas:::check_token(), per_page = 100),
             args)

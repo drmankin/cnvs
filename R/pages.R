@@ -11,7 +11,7 @@ get_pages <- function(module_id){
     sort = "created_at"
   )
 
-  cnvs::get(url, args)
+  cnvs::get_resp(url, args)
 }
 
 

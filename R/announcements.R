@@ -17,11 +17,11 @@ get_anncs <- function(module_id){
 #'
 #' This function will create a new announcement if none currently exists with
 #' the same title, and will update an existing announcement if the title is the
-#' same. So, if you want announcements to be separated (and no overwritten), you
+#' same. So, if you want announcements to be separated (and not overwritten), you
 #' MUST NOT duplicate titles!
 #'
 #' @param module_id The Canvas ID of the module to update (use
-#'   [get_module_id()])
+#'   [cnvs::get_module_id()])
 #' @param file_path Location of a .qmd Quarto file to post
 #' @param page_title Optional. Custom page title, if different from the title of
 #'   the Quarto document
@@ -33,6 +33,7 @@ get_anncs <- function(module_id){
 #' @export
 #'
 #' @examples
+#' \dontrun{quarto_annc("123C4", here::here("announcement.qmd"))}
 
 quarto_annc <- function(module_id, file_path, page_title, post_at = NULL){
 
@@ -108,14 +109,16 @@ rcanvas:::canvas_query(
 #' function will find the next closest announcement to the current datetime and
 #' post it to Canvas delayed until the time indicated in its filename.
 #'
-#' @param module_id
-#' @param annc_path
-#' @param annc_title
+#' @param module_id The Canvas ID of the module to update (use
+#'   [cnvs::get_module_id()])
+#' @param annc_path Path to a folder containing announcements written in qmd files
+#' @param annc_title Title to give the announcement on Canvas, if different than the title of the document
 #'
-#' @return
+#' @return Response from Canvas
 #' @export
 #'
 #' @examples
+#' \dontrun{schedule_annc("123C4")}
 
 schedule_annc <- function(module_id, annc_path = here::here("announcements"), annc_title){
 

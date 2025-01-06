@@ -273,9 +273,9 @@ create_quiz_info <- function(module_code, quiz_desc = NULL,
 #'   should be unlocked.
 #' @param lock A datetime using [format_ISO8601()] indicating when the quiz
 #'   should be locked.
-#' @module_id Canvas ID number of the module where the quizzes will be created
+#' @param module_id Canvas ID number of the module where the quizzes will be created
 #'   (note: NOT module code!)
-#' @quiz_desc Single string containing the text description for the quiz.
+#' @param quiz_desc Single string containing the text description for the quiz.
 #'   Accepts basic HTML formatting tags.
 #' @param time_limit Time limit for the quiz in minutes.
 #' @param allowed_attempts A number, with -1 corresponded to infinite attempts.
