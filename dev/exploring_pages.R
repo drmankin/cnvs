@@ -7,7 +7,9 @@ devtools::load_all()
 canvas_setup()
 
 # Get module ID number
-module_id <- get_module_id(search_term = "dissertation supervision", academic_year = "continuous")
+#module_id <- get_module_id(search_term = "dissertation supervision", academic_year = "continuous")
+
+module_id <- get_module_id(search_term = "sandbox")
 
 # Get list of pages
 pages <- rcanvas:::process_response(

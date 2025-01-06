@@ -19,13 +19,15 @@ get_submissions <- function (module_id, type, type_id, add_args = list())
     stop("type must be 'quizzes' or 'assignments'")
   url <- sprintf("%scourses/%s/%s/%s/submissions", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id, type, type_id)
-  args <- append(list(access_token = rcanvas:::check_token(), per_page = 100),
+
+    args <- append(list(access_token = rcanvas:::check_token(), per_page = 100),
                  add_args)
 
   rcanvas:::process_response(url, args)  |>
     dplyr::bind_rows() |>
     dplyr::mutate(course_id = module_id) |>
     tibble::as_tibble()
+
 }
 
 #' Get information about all quizzes in a module

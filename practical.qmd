@@ -1,0 +1,7 @@
+## Practical
+
+Before your practical this week, begin (or complete) the tutorial on Posit Cloud.
+
+- Go to the Posit Cloud project for this week
+
+- Open this week's tutorial document
