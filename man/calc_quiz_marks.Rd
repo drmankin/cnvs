@@ -9,7 +9,7 @@ calc_quiz_marks(
   academic_year,
   quiz_title = "Worksheet",
   quiz_data,
-  max_score = 7
+  max_score
 )
 }
 \arguments{
@@ -30,11 +30,11 @@ make manual changes before calculating the quiz mark. If this argument is
 empty, the function will instead download the quiz marks directly from
 Canvas using the information in the following arguments.}
 
-\item{max_score}{Maximum possible score for the quizzes. Defaults to 7.}
+\item{max_score}{Maximum possible score for the quizzes}
 }
 \value{
-A list with three elements: $marks, a tibble of quiz marks for all
-  students, and $dist, a histogram of the distribution of those marks
+A list with three elements: $all_marks, a tibble of all quiz scores for all
+  students; $mean_marks, a tibble of final quiz mark for all students; and $dist, a histogram of the distribution of those final marks
 }
 \description{
 Calculate "best-of" worksheet marks

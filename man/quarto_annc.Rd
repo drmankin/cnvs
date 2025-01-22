@@ -28,6 +28,3 @@ the same title, and will update an existing announcement if the title is the
 same. So, if you want announcements to be separated (and not overwritten), you
 MUST NOT duplicate titles!
 }
-\examples{
-\dontrun{quarto_annc("123C4", here::here("announcement.qmd"))}
-}

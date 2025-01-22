@@ -16,5 +16,6 @@ A tibble of information about all quizzes on the module.
 Get information about all quizzes in a module
 }
 \examples{
-\dontrun{get_all_quizzes(module_id = 12345)}
+\dontrun{cnvs::get_all_quizzes(module_id = 12345)}
+
 }

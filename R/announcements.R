@@ -5,8 +5,8 @@
 
 get_anncs <- function(module_id){
 
-  rcanvas:::process_response(
-    url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "discussion_topics")),
+  cnvs::rcanvas_process_response(
+    url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id, "discussion_topics")),
     args = list(
       only_announcements = TRUE
     )
@@ -31,9 +31,7 @@ get_anncs <- function(module_id){
 #'
 #' @return Response from Canvas
 #' @export
-#'
-#' @examples
-#' \dontrun{quarto_annc("123C4", here::here("announcement.qmd"))}
+
 
 quarto_annc <- function(module_id, file_path, page_title, post_at = NULL){
 
@@ -57,19 +55,16 @@ quarto_annc <- function(module_id, file_path, page_title, post_at = NULL){
 
   ## Check whether page with same title already exists
   ### Return a table of all existing announcements
-  all_anncs <- get_anncs(module_id)
+  all_anncs <- cnvs::get_anncs(module_id)
 
+  annc_id <- ""
+
+  ## If one with the same title exists, get that id
+  ## Otherwise set
   if(nrow(all_anncs) > 0){
-    ext_annc_id <- all_anncs |>
+    annc_id <- all_anncs |>
       dplyr::filter(title == page_title) |>
       dplyr::pull(id)
-  }
-
-  ## If a announcement ID already exists, use that one. REQUIRES that all announcements are called different things!
-  if(length(ext_annc_id) != 0) {
-    annc_id <- ext_annc_id
-  } else {
-    annc_id <- ""
   }
 
   ## Delete title from HTML
@@ -89,8 +84,8 @@ quarto_annc <- function(module_id, file_path, page_title, post_at = NULL){
 
   ## Send to Canvas
 
-rcanvas:::canvas_query(
-  url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "discussion_topics", annc_id)),
+cnvs::rcanvas_canvas_query(
+  url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id, "discussion_topics", annc_id)),
   args = list(
     `title` = page_title,
     `message` = page_body,

@@ -20,10 +20,10 @@ get_submissions <- function (module_id, type, type_id, add_args = list())
   url <- sprintf("%scourses/%s/%s/%s/submissions", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id, type, type_id)
 
-    args <- append(list(access_token = rcanvas:::check_token(), per_page = 100),
+    args <- append(list(access_token = cnvs::rcanvas_check_token(), per_page = 100),
                  add_args)
 
-  rcanvas:::process_response(url, args)  |>
+  cnvs::rcanvas_process_response(url, args)  |>
     dplyr::bind_rows() |>
     dplyr::mutate(course_id = module_id) |>
     tibble::as_tibble()
@@ -38,12 +38,13 @@ get_submissions <- function (module_id, type, type_id, add_args = list())
 #' @export
 #'
 #' @examples
-#' \dontrun{get_all_quizzes(module_id = 12345)}
+#' \dontrun{cnvs::get_all_quizzes(module_id = 12345)}
+#'
 get_all_quizzes <- function(module_id){
   url <- sprintf("%scourses/%s/quizzes", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id)
-  args <- list(access_token = rcanvas:::check_token(), per_page = 100)
-  quizzes <- rcanvas:::process_response(url, args) |>
+  args <- list(access_token = cnvs::rcanvas_check_token(), per_page = 100)
+  quizzes <- cnvs::rcanvas_process_response(url, args) |>
     dplyr::bind_rows() |>
     dplyr::mutate(course_id = module_id) |>
     tibble::as_tibble()
@@ -60,8 +61,8 @@ get_all_quizzes <- function(module_id){
 get_quiz_questions <- function(module_id, quiz_id){
   url <- sprintf("%scourses/%s/quizzes/%s/questions", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id, quiz_id)
-  args <- list(access_token = rcanvas:::check_token(), per_page = 100)
-  quizzes <- rcanvas:::process_response(url, args) |>
+  args <- list(access_token = cnvs::rcanvas_check_token(), per_page = 100)
+  quizzes <- cnvs::rcanvas_process_response(url, args) |>
     dplyr::bind_rows() |>
     dplyr::mutate(course_id = module_id) |>
     tibble::as_tibble()
@@ -234,17 +235,17 @@ get_quiz_marks <- function(module_code,
 #'   make manual changes before calculating the quiz mark. If this argument is
 #'   empty, the function will instead download the quiz marks directly from
 #'   Canvas using the information in the following arguments.
-#' @param max_score Maximum possible score for the quizzes. Defaults to 7.
+#' @param max_score Maximum possible score for the quizzes
 #'
-#' @returns A list with three elements: $marks, a tibble of quiz marks for all
-#'   students, and $dist, a histogram of the distribution of those marks
+#' @returns A list with three elements: $all_marks, a tibble of all quiz scores for all
+#'   students; $mean_marks, a tibble of final quiz mark for all students; and $dist, a histogram of the distribution of those final marks
 #' @export
 
 calc_quiz_marks <- function(module_code,
                            academic_year,
                            quiz_title = "Worksheet",
                            quiz_data,
-                           max_score = 7){
+                           max_score){
   ## CHECK IF THIS WORKS
   if(missing(quiz_data)){
     quiz_scores_full <- cnvs::get_quiz_marks(module_code = module_code,

@@ -83,7 +83,7 @@ quizzes). E.g. for an 11-week term, with three weeks of spring break, the
 total number of weeks is 14: 10 weeks of term, three weeks break, and one
 final week of term. In this case the input would be 11:13.}
 
-\item{challengr}{}
+\item{challengr}{Should the quizzes be ChallengRs?}
 }
 \value{
 A tibble of quiz information to pass to
@@ -92,4 +92,7 @@ A tibble of quiz information to pass to
 \description{
 Make a tibble of information to use in [cnvs::create_quizzes()].
 Specifically designed to make weekly quizzes for worksheets.
+}
+\details{
+If quizzes are "ChallengRs", they will be named accordingly and be practice quizzes.
 }

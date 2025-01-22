@@ -10,3 +10,20 @@ License: What license is it under?
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2
+Imports: 
+    dplyr,
+    ggplot2,
+    here,
+    httr,
+    jsonlite,
+    keyring,
+    lubridate,
+    magrittr,
+    purrr,
+    quarto,
+    rcanvas (>= 0.0.0.9001),
+    stringr,
+    tibble,
+    tidyr
+Remotes: 
+    daranzolin

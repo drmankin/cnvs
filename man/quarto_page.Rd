@@ -10,6 +10,7 @@ quarto_page(
   syllabus = FALSE,
   page_id = "",
   page_title,
+  overwrite = FALSE,
   published = TRUE,
   front_page = FALSE
 )
@@ -24,6 +25,8 @@ quarto_page(
 \item{page_id}{ID or URL of an existing Canvas page. If left as "" (the default) will instead create a new page}
 
 \item{page_title}{Optional. Custom page title, if different from the title of the Quarto document}
+
+\item{overwrite}{If there is an existing page already, should it be overwritten?}
 
 \item{published}{Publish the page?}
 

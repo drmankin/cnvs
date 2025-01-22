@@ -4,7 +4,7 @@
 \alias{get_module_id}
 \title{Get Canvas module ID}
 \usage{
-get_module_id(search_term, academic_year)
+get_module_id(search_term, academic_year, quietly = FALSE)
 }
 \arguments{
 \item{search_term}{A string containing word or phrase (exact) in the module
@@ -14,6 +14,8 @@ title to search for, OR a module code (not both!)}
 module as e.g. "22/23"; defaults to the current year as calculated by
 [cnvs::get_ac_year()]. Does not need to be specified for ongoing/non-academic
 modules}
+
+\item{quietly}{Should the message about academic year be suppressed?}
 }
 \value{
 Canvas module ID as a numeric vector.

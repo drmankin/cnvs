@@ -31,54 +31,6 @@ canvas_setup <- function(domain = "https://canvas.sussex.ac.uk"){
   rcanvas::set_canvas_domain(domain)
 }
 
-#' Get details of all modules
-#'
-#' Wrapper for `rcanvas` function [rcanvas::get_course_list()] with some extra
-#' cleaning for convenience.
-#'
-#' @param academic_modules Boolean. Return only academic modules (removing those
-#'   without a course ID code)? Defaults to `FALSE`.
-#' @param academic_year Optional string to filter only specific academic
-#'   year(s). Accepts the format e.g. "22/23" or a vector of the same.
-#'
-#'
-#' @returns A tibble of information about all the Canvas modules that are
-#'   currently associated with the Canvas token set by [canvas_setup()].
-#' @export
-
-get_module_list <- function(academic_modules = FALSE, academic_year = NA_character_){
-  module_list <- rcanvas::get_course_list()[[1]] |>
-    tibble::as_tibble()
-
-  if(academic_modules == TRUE){
-    module_list <- module_list |>
-      dplyr::filter(!is.na(sis_course_id))
-  }
-
-  module_list <- module_list |>
-    tidyr::separate_wider_delim(cols = sis_course_id,
-                    names = c("module_code", "term", "start_year", "end_year"),
-                    delim = "_",
-                    too_few = "align_start",
-                    too_many = "drop") |>
-    dplyr::mutate(
-      ## This is because some (small number of) sis_course_ids are not actually composed of the elements above
-      ## So this turns their module_code into NA to prevent Problems(TM)
-      module_code = ifelse(grepl(pattern = "^[A-Z]?[0-9]+[A-Z]?[0-9]+", x = module_code),
-                           yes = module_code, no = NA),
-      ac_year = dplyr::case_when(
-        !is.na(module_code) ~ paste0(start_year, "/", end_year),
-        TRUE ~ "continuous")
-    )
-
-  if(!all(is.na(academic_year))){
-    module_list <- module_list |>
-      dplyr::filter(ac_year %in% academic_year)
-  }
-
-  return(module_list)
-}
-
 #' Create a string for the current academic year
 #'
 #' Checks the current year and produces an academic year abbreviation, e.g.
@@ -109,15 +61,16 @@ get_ac_year <- function(switch_date = as.Date(paste0(format(Sys.Date(), "%Y"), "
 #'   module as e.g. "22/23"; defaults to the current year as calculated by
 #'   [cnvs::get_ac_year()]. Does not need to be specified for ongoing/non-academic
 #'   modules
+#' @param quietly Should the message about academic year be suppressed?
 #'
 #' @returns Canvas module ID as a numeric vector.
 #' @export
 
-get_module_id <- function(search_term, academic_year){
+get_module_id <- function(search_term, academic_year, quietly = FALSE){
 
   if(missing(academic_year)){
     academic_year <- cnvs::get_ac_year()
-    message(paste("Using current year", academic_year, "if necessary"))
+    if(!quietly) {message(paste("Using current year", academic_year, "if necessary"))}
   }
 
   module_list <- cnvs::get_module_list(academic_modules = FALSE)
@@ -168,6 +121,38 @@ get_module_id <- function(search_term, academic_year){
 
   ## Also still can't get the multiple lookahead matches to work!
 
+}
+
+#' Check module code input and attempt to return the Canvas module ID
+#'
+#' @param search_term A string containing word or phrase (exact) in the module
+#'   title to search for, OR a module code (not both!)
+#' @param academic_year A string containing the academic year for the desired
+#'   module as e.g. "22/23"; defaults to the current year as calculated by
+#'   [cnvs::get_ac_year()]. Does not need to be specified for ongoing/non-academic
+#'   modules
+#' @param quietly Should the message about academic year be suppressed?
+#'
+#' @returns Canvas module ID
+#' @export
+
+set_module_id <- function(search_term, academic_year, quietly = FALSE){
+
+  if(missing(academic_year)){
+    academic_year <- cnvs::get_ac_year()
+    if(!quietly) {message(paste("Using current year", academic_year, "if necessary"))}
+  }
+
+  # Try to get the Canvas module id
+  module_id <- try(cnvs::get_module_id(search_term, academic_year), silent = TRUE)
+
+  # If that didn't work, try running canvas_setup() to set the domain and token
+  if(inherits(module_id, "try-error")){
+    cnvs::canvas_setup()
+    module_id <- cnvs::get_module_id(search_term, academic_year)
+  }
+
+  return(module_id)
 }
 
 #' Set up local folder for writing Quarto/Canvas pages
@@ -249,83 +234,6 @@ cnvs_folder <- function(local_path, search_term, module_list, set_wd = FALSE, te
   return(module_path)
 }
 
-
-#' Create a markdown-style in-text link to various Canvas destinations
-#'
-#' Convenience function to use as inline code to quickly insert embedded
-#' hyperlinks
-#'
-#' @param link_text The text to be hyperlinked
-#' @param dest The desination, one of:
-#'  - "website", which will link to `web_url`
-#'  - One of the normal Canvas elements (e.g. "Assignments", "Quizzes")
-#'  - "Zoom" or "Panopto Recordings"
-#'  - A text string that matches the machine-readable page name in the Canvas
-#'  site returned by `search_term`
-#'   If missing, `url` must be provided for a custom link.
-#' @param search_term Passed to [get_module_id()] to return the module ID
-#' @param web_url URL to use for "website"
-#' @param url The end of a Canvas URL - the first bit will be added
-#'   automatically up to ".../courses/module_id/".
-#' @param type What kind of link to produce - "markdown" or "html"
-#'
-#' @return An embedded link text string
-#' @export
-
-embed_link <- function(link_text, dest, search_term, type, url = NULL, web_url = "https://r-training.netlify.app"){
-
-  if(!missing(search_term)){
-    module_id <- get_module_id(search_term)
-  }
-
-  cnvs_dest <- c("Home", "Announcements", "Assignments", "Discussions", "Grades", "People", "Pages", "Files", "Syllabus", "Quizzes", "Units", "Collaborations")
-  cnvs_links <- c("", "announcements", "assignments", "discussion_topics", "grades", "users", "wiki", "files", "assignments/syllabus", "quizzes", "modules", "collaborations")
-
-  all_dest <- purrr::set_names(cnvs_links, nm = cnvs_dest)
-
-  if (type == "markdown"){
-    if(missing(dest) & !is.null(url)){
-      paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/", module_id, "/", url),")")
-    } else if (dest == "website"){
-      paste0("[", link_text, "](", web_url, ")")
-    } else if(dest %in% cnvs_dest){
-      paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
-                                          module_id, "/", all_dest[names(all_dest) == dest], ")"))
-    } else if(dest %in% c("Zoom", "Panopto Recordings")) {
-      paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
-                                          module_id, "/external_tools/", switch(dest,
-                                                                                Zoom = 5351,
-                                                                                `Panopto Recordings` = 3491)), ")")
-    } else {
-      paste0("[", link_text, "](", paste0("https://canvas.sussex.ac.uk/courses/",
-                                          module_id, "/pages/", dest), ")")
-    }
-  }
-
-  if (type == "html"){
-    if(missing(dest) & !is.null(url)){
-      paste0("<a href='", paste0("https://canvas.sussex.ac.uk/courses/", module_id, "/", url), "'>", link_text, "</a>")
-    } else if (dest == "website"){
-      paste0("<a href='", web_url, "'>", link_text, "</a>")
-    } else if(dest %in% cnvs_dest){
-      paste0("<a href='", paste0("https://canvas.sussex.ac.uk/courses/",
-                                 module_id, "/", all_dest[names(all_dest) == dest], ")"),
-             "'>", link_text, "</a>")
-    } else if(dest %in% c("Zoom", "Panopto Recordings")) {
-      paste0("<a href='", paste0("https://canvas.sussex.ac.uk/courses/",
-                                 module_id, "/external_tools/", switch(dest,
-                                                                       Zoom = 5351,
-                                                                       `Panopto Recordings` = 3491)),
-             "'>", link_text, "</a>")
-    } else {
-      paste0("<a href='", paste0("https://canvas.sussex.ac.uk/courses/",
-                                 module_id, "/pages/", dest), "'>", link_text, "</a>")
-    }
-  }
-}
-
-
-
 #' Publish (offer) a Canvas module
 #'
 #' @param search_term Passed to [get_module_id()] to return the module ID
@@ -337,167 +245,13 @@ publish_module <- function(search_term){
 
   module_id <- cnvs::get_module_id(search_term)
 
-  rcanvas:::canvas_query(
-    url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id)),
+  cnvs::rcanvas_canvas_query(
+    url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id)),
     args = list(
       `offer` = TRUE
     ),
     "PUT"
   )
-}
-
-#' Get a tibble of all users on a module
-#'
-#' Note that this is different from [cnvs::get_students()] as this gets all
-#' USERS including convenors, observers, DTs etc
-#'
-#' @param module_id A Canvas module ID number (NOT university module code).
-#'
-#' @return A tibble of user information
-#' @export
-
-get_users <- function(module_id){
-  url <- paste0(rcanvas:::canvas_url(), "/", paste("courses", module_id,
-                                                   "users", sep = "/"))
-  args <- list(per_page = 100)
-  include <- rcanvas:::iter_args_list(NULL, "include[]")
-  args <- c(args, include)
-  dat <- rcanvas:::process_response(url, args)
-  return(tibble::as_tibble(dat))
-}
-
-
-#' Get information about all students on a module
-#'
-#' @param module_id A Canvas module ID number (NOT university module code).
-#'
-#' @returns A tibble of student information
-#' @export
-
-
-get_students <- function(module_id){
-  students <- rcanvas:::canvas_query(
-    paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/students"),
-    list(per_page = 100), "GET") |>
-    rcanvas:::paginate() |>
-    purrr::map(httr::content, "text") |>
-    purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
-    dplyr::bind_rows()
-
-  students <- students[!duplicated(students), ] |>
-    dplyr::mutate(cand_no = gsub("Candidate No : ", "", sortable_name))
-
-  students <- students |>
-    dplyr::select(-created_at, -sortable_name, -short_name, -integration_id, -pronouns) |>
-    dplyr::mutate(cand_no = as.numeric(cand_no)) |>
-    dplyr::filter(!is.na(cand_no))
-}
-
-#' Create a new section in a module
-#'
-#' @param module_id Canvas module ID number
-#' @param section_name Name to give the new section
-#'
-#' @returns A response from Canvas.
-#' @export
-
-create_section <- function(module_id, section_name){
-rcanvas:::canvas_query(
-  url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "sections")),
-  args = list(
-    `course_section[name]` = section_name
-  ),
-  "POST"
-)
-}
-
-#' Get all sections on a module
-#'
-#' @param module_id Canvas module ID number
-#' @param search_term Optional string to search for in section names.
-#'
-#' @returns Tibble of information about sections
-#' @export
-
-get_sections <- function(module_id, search_term = ""){
-  rcanvas:::canvas_query(
-  url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "/sections")),
-  args = list(
-    `include[]` = "students",
-    search_term = search_term,
-    per_page = 100
-  ),
-  "GET"
-  )|>
-  rcanvas:::paginate() |>
-  purrr::map(httr::content, "text") |>
-  purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
-  dplyr::bind_rows()
-}
-
-
-#' Enroll a user in an (existing) section
-#'
-#' @param section_id ID of the section to enroll the user in
-#' @param user_id ID of the user
-#'
-#' @returns Response from Canvas
-#' @export
-
-enroll_in_section <- function(section_id, user_id){
-  rcanvas:::canvas_query(
-  url = paste0(rcanvas:::canvas_url(), file.path("/sections", section_id, "enrollments")),
-  args = list(
-    `enrollment[user_id]` = user_id
-  ),
-  "POST"
-)
-}
-
-
-#' Calculate the date of the next weekday
-#'
-#' Taken from a [stack overflow solution by TimTeaFan](https://stackoverflow.com/questions/57893554/get-next-wednesday-date-after-a-date-with-r)
-#'
-#' @param date A datetime
-#' @param weekday A day of the week as a number, with 1 = Sunday and 7 = Saturday
-#'
-#' @returns The date of the next [weekday] after the given [date]
-#' @export
-
-next_weekday <- function(date, weekday){
-  date + (seq(weekday - 1, length = 7) %% 7 + 1L)[8 - lubridate::wday(date)]
-}
-
-#' Check module code input and attempt to return the Canvas module ID
-#'
-#' @param search_term A string containing word or phrase (exact) in the module
-#'   title to search for, OR a module code (not both!)
-#' @param academic_year A string containing the academic year for the desired
-#'   module as e.g. "22/23"; defaults to the current year as calculated by
-#'   [cnvs::get_ac_year()]. Does not need to be specified for ongoing/non-academic
-#'   modules
-#'
-#' @returns Canvas module ID
-#' @export
-
-set_module_id <- function(search_term, academic_year){
-
-  if(missing(academic_year)){
-    academic_year <- cnvs::get_ac_year()
-    message(paste("Using current year", academic_year, "if necessary"))
-  }
-
-# Try to get the Canvas module id
-module_id <- try(cnvs::get_module_id(search_term, academic_year), silent = TRUE)
-
-# If that didn't work, try running canvas_setup() to set the domain and token
-if(inherits(module_id, "try-error")){
-  cnvs::canvas_setup()
-  module_id <- cnvs::get_module_id(search_term, academic_year)
-}
-
-return(module_id)
 }
 
 #' Get a response from Canvas
@@ -510,12 +264,228 @@ return(module_id)
 
 get_resp <- function(url, args){
 
-  args <- c(list(access_token = rcanvas:::check_token(), per_page = 100),
+  args <- c(list(access_token = cnvs::rcanvas_check_token(), per_page = 100),
             args)
 
-  resp <- rcanvas:::process_response(url, args) |>
-  dplyr::bind_rows() |>
+  resp <- cnvs::rcanvas_process_response(url, args) |>
   dplyr::mutate(course_id = module_id)
 
   return(resp)
+}
+
+#' Generate a Canvas URL
+#'
+#' Copied from the unexported `canvas_url()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#'
+#' @returns A Canvas API URL
+#' @export
+
+rcanvas_canvas_url <- function(){
+  paste0(get("rcanvas_CANVAS_DOMAIN", envir = cdenv),
+         "/api/vi")
+}
+
+#' Send a query to Canvas
+#'
+#' Copied from the unexported `canvas_query()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#' See [cnvs::rcanvas_canvas_url()] for generating the API URL
+#'
+#' @param urlx A Canvas API URL
+#' @param args Arguments to append to the API request
+#' @param type Type of query, of "GET", "POST", "PUT"
+#'
+#' @returns Response from Canvas
+#' @export
+
+rcanvas_canvas_query <- function(urlx, args = NULL, type = "GET") {
+  args <- cnvs::rcanvas_sc(args)
+  resp_fun_args <- list(url = urlx, httr::user_agent("rcanvas - https://github.com/daranzolin/rcanvas"),
+                        httr::add_headers(Authorization = paste("Bearer", cnvs::rcanvas_check_token())))
+  if (type %in% c("POST", "PUT"))
+    resp_fun_args$body = args
+  else resp_fun_args$query = args
+  resp <- do.call(type, resp_fun_args)
+  httr::stop_for_status(resp)
+  resp
+}
+
+#' Check Canvas token
+#'
+#' Copied from the unexported `check_token()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#'
+#' @returns The user's Canvas token
+#' @export
+
+rcanvas_check_token <- function ()
+{
+  token <- keyring::key_get("rcanvas_CANVAS_API_TOKEN")
+  if (identical(token, "")) {
+    stop("Please set your Canvas API token with set_canvas_token.",
+         call. = FALSE)
+  }
+  token
+}
+
+#' Get and process a response from Canvas
+#'
+#' Copied from the unexported `process_response()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#'
+#' @param url A Canvas API URL
+#' @param args Arguments to append to the API request
+#'
+#' @returns A dataset containing the requested information
+#' @export
+
+rcanvas_process_response <- function (url, args)
+  {
+    resp <- cnvs::rcanvas_canvas_query(url, args, "GET")
+    d <- cnvs::rcanvas_paginate(resp) |> purrr::map(httr::content, "text") |>
+      purrr::map(jsonlite::fromJSON, flatten = TRUE)
+    dplyr::bind_rows(d)
+}
+
+#' Create a list of arguments for an API query
+#'
+#' Copied from the unexported `iter_args_list()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#'
+#' @param x A vector of values
+#' @param label Labels for the values of `x`
+#'
+#' @returns A labeled (named) list
+#' @export
+
+rcanvas_iter_args_list <- function (x, label)
+{
+  ln <- list()
+  for (i in seq_along(x)) {
+    ln[[i]] <- x[i]
+    names(ln)[[i]] <- label
+  }
+  ln
+}
+
+#' Paginate a response from Canvas
+#'
+#' Copied from the unexported `paginate()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#'
+#' @param x Response from Canvas from e.g. [cnvs::rcanvas_canvas_query()]
+#' @param showProgress Show progress bar
+#'
+#' @returns Paginated responses (probably)
+#' @export
+
+rcanvas_paginate <- function (x, showProgress = FALSE)
+{
+  first_response <- list(x)
+  stopifnot(httr::status_code(x) == 200)
+  pages <- httr::headers(x)$link
+  if (is.null(pages))
+    return(first_response)
+  should_continue <- TRUE
+  if (cnvs::rcanvas_has_rel(pages, "last")) {
+    last_page <- cnvs::rcanvas_get_page(x, "last")
+    n_pages <- readr::parse_number(stringr::str_extract(last_page,
+                                                        "page=[0-9]{1,}"))
+    if (n_pages == 1) {
+      return(first_response)
+    }
+    pages <- cnvs::rcanvas_increment_pages(last_page, 2:n_pages)
+    if (showProgress) {
+      bar = utils::txtProgressBar(max = n_pages, style = 3)
+    }
+    queryfunc = function(...) {
+      if (showProgress)
+        bar$up(bar$getVal() + 1)
+      cnvs::rcanvas_canvas_query(...)
+    }
+    responses <- pages |> purrr::map(queryfunc, args = list(access_token = cnvs::rcanvas_check_token()))
+    responses <- c(first_response, responses)
+    return(responses)
+  }
+  else {
+    if (cnvs::rcanvas_has_rel(httr::headers(x)$link, "next")) {
+      pages[[1]] <- cnvs::rcanvas_get_page(x, "current")
+      inc <- 2
+      while (should_continue) {
+        page_temp <- cnvs::rcanvas_get_page(x, "next")
+        pages[[inc]] <- page_temp
+        x <- cnvs::rcanvas_canvas_query(page_temp, args = list(access_token = cnvs::rcanvas_check_token()),
+                          type = "HEAD")
+        if (!cnvs::rcanvas_has_rel(httr::headers(x)$link, "next")) {
+          should_continue <- FALSE
+        }
+        else {
+          inc <- inc + 1
+        }
+      }
+      responses <- pages |> purrr::map(cnvs::rcanvas_canvas_query, args = list(access_token = cnvs::rcanvas_check_token()))
+    }
+  }
+}
+
+
+
+#' Check "rel" property (maybe?)
+#'
+#' Copied from the unexported `has_rel()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#' Not 100% on what this one does but seems important!
+#'
+#' @param x Input
+#' @param rel rel value to search for in `x`
+#'
+#' @returns A Boolean
+#' @export
+
+rcanvas_has_rel <- function(x, rel){
+  stopifnot(!is.null(rel))
+  any(grepl(paste0("rel=\"", rel, "\""), x))
+}
+
+#' Discard NULLs
+#'
+#' Copied from the unexported `sc()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#'
+#' @param x A list or vector
+#'
+#' @returns `x` with any NULL values removed
+#' @export
+rcanvas_sc <- function(x){
+  purrr::discard(x, is.null)
+}
+
+#' Get a page from a response
+#'
+#' Copied from the unexported `get_page()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#'
+#' @param resp Response from Canvas
+#' @param page Which page to get
+#'
+#' @returns A URL
+#' @export
+
+rcanvas_get_page <- function (resp, page)
+{
+  pages <- resp$headers$link
+  url_pattern <- "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+  pages <- stringr::str_split(pages, ",")[[1]]
+  url <- stringr::str_subset(pages, page)
+  url <- stringr::str_extract(url, url_pattern)
+  url <- stringr::str_replace_all(url, "[<>;]", "")
+  return(url)
+}
+
+#' Increment pages
+#'
+#' Copied from the unexported `increment_pages()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+#'
+#' @param base_url A URL
+#' @param n_pages Number of pages
+#'
+#' @returns URL with incremented pages (probably)
+#' @export
+
+rcanvas_increment_pages <- function (base_url, n_pages)
+{
+  stringr::str_replace(base_url, "([\\?&])(page=[0-9a-zA-Z]{1,})",
+                       sprintf("\\1page=%s", n_pages))
 }

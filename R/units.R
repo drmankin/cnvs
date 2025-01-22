@@ -15,14 +15,14 @@ get_units <- function(module_id, search_term = NULL, id_only = FALSE){
   url <- paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/modules")
 
   args <- list(
-    access_token = rcanvas:::check_token(),
+    access_token = cnvs::rcanvas_check_token(),
     `include[]` = "items",
     `search_term` = search_term
   )
 
   units <- cnvs::get(url, args)
 
-  # units <- rcanvas:::process_response(url, args) |>
+  # units <- cnvs::rcanvas_process_response(url, args) |>
   #   dplyr::bind_rows() |>
   #   dplyr::mutate(course_id = module_id)
 
@@ -60,16 +60,16 @@ add_page_to_unit <- function(module_id, unit_search_term, page_search_term){
     stop("Your page search didn't return any matches.")
   }
 
-  url <- file.path(rcanvas:::canvas_url(), "courses", module_id, "modules", unit_id, "items")
+  url <- file.path(cnvs::rcanvas_canvas_url(), "courses", module_id, "modules", unit_id, "items")
 
   args <- list(
-    access_token = rcanvas:::check_token(),
+    access_token = cnvs::rcanvas_check_token(),
     `module_item[type]` = "Page",
     `module_item[page_url]` = page_url,
     `module_item[position]` = 2
   )
 
-  rcanvas:::canvas_query(
+  cnvs::rcanvas_canvas_query(
     url, args, "POST")
 
 }
