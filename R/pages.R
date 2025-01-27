@@ -5,7 +5,7 @@
 
 get_pages <- function(module_id){
 
-  url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id, "pages"))
+  url = paste0(cnvs::canvas_url(), file.path("/courses", module_id, "pages"))
 
   args = list(
     sort = "created_at"

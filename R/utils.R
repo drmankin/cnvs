@@ -282,7 +282,16 @@ get_resp <- function(url, args){
 
 rcanvas_canvas_url <- function(){
   paste0(get("rcanvas_CANVAS_DOMAIN", envir = cdenv),
-         "/api/vi")
+         "/api/v1")
+}
+
+#' Generate a Canvas URL
+#'
+#' @returns A Canvas API URL
+#' @export
+
+canvas_url <- function(){
+  paste0(Sys.getenv("CANVAS_DOMAIN"), "/api/v1")
 }
 
 #' Send a query to Canvas
@@ -338,7 +347,7 @@ rcanvas_check_token <- function ()
 
 rcanvas_process_response <- function (url, args)
   {
-    resp <- cnvs::rcanvas_canvas_query(url, args, "GET")
+    resp <- rcanvas:::canvas_query(url, args, "GET")
     d <- cnvs::rcanvas_paginate(resp) |> purrr::map(httr::content, "text") |>
       purrr::map(jsonlite::fromJSON, flatten = TRUE)
     dplyr::bind_rows(d)
