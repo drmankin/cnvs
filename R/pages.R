@@ -55,7 +55,7 @@ quarto_page <- function(module_id, file_path, syllabus = FALSE, page_id = "", pa
   }
 
   ## Check whether page with same title already exists
-  all_pages <- get_pages(module_id)
+  all_pages <- cnvs::get_pages(module_id)
 
   if(nrow(all_pages) > 0){
     ext_page_id <- all_pages |>
@@ -69,6 +69,8 @@ quarto_page <- function(module_id, file_path, syllabus = FALSE, page_id = "", pa
   ## If a page ID already exists, use that one. REQUIRES that all pages are called different things!
   if(length(ext_page_id) != 0) {
     page_id <- ext_page_id
+  } else {
+    page_id <- ""
   }
 
   ## Delete title from HTML
@@ -83,16 +85,16 @@ quarto_page <- function(module_id, file_path, syllabus = FALSE, page_id = "", pa
 
   ## Send to Canvas
   if (syllabus == TRUE){
-    cnvs::rcanvas_canvas_query(
-      url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id)),
+    rcanvas:::canvas_query(
+      url = paste0(cnvs::canvas_url(), file.path("/courses", module_id)),
       args = list(
         `course[syllabus_body]` = page_body
       ),
       "PUT"
     )
   } else {
-    cnvs::rcanvas_canvas_query(
-    url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id, "pages", page_id)),
+    rcanvas:::canvas_query(
+    url = file.path(cnvs::canvas_url(), "courses", module_id, "pages", page_id),
     args = list(
       `wiki_page[title]` = page_title,
       `wiki_page[body]` = page_body,

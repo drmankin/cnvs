@@ -20,7 +20,7 @@ get_units <- function(module_id, search_term = NULL, id_only = FALSE){
     `search_term` = search_term
   )
 
-  units <- cnvs::get(url, args)
+  units <- cnvs::get_resp(url, args)
 
   # units <- cnvs::rcanvas_process_response(url, args) |>
   #   dplyr::bind_rows() |>
@@ -54,13 +54,13 @@ add_page_to_unit <- function(module_id, unit_search_term, page_search_term){
                         x = tolower(title))) |>
     dplyr::pull(url)
 
-  if(length(url) > 1){
+  if(length(page_url) > 1){
     stop("Your page search returned more than one match. Use a more precise page search term.")
-  } else if (length(url) < 1) {
+  } else if (length(page_url) < 1) {
     stop("Your page search didn't return any matches.")
   }
 
-  url <- file.path(cnvs::rcanvas_canvas_url(), "courses", module_id, "modules", unit_id, "items")
+  url <- file.path(cnvs::canvas_url(), "courses", module_id, "modules", unit_id, "items")
 
   args <- list(
     access_token = cnvs::rcanvas_check_token(),
@@ -69,7 +69,7 @@ add_page_to_unit <- function(module_id, unit_search_term, page_search_term){
     `module_item[position]` = 2
   )
 
-  cnvs::rcanvas_canvas_query(
+  rcanvas:::canvas_query(
     url, args, "POST")
 
 }
