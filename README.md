@@ -114,7 +114,8 @@ This package tries to streamline the iterative nature of querying the
 Canvas API. For essentially any information that Canvas holds - for
 users, assessments, questions in a quiz, answers to a particular
 question, there is a corresponding ID number that Canvas uses to
-identify that specific thing.
+identify that specific thing. These functions generally try to truncate
+the back-and-forth by making assumptions about the end goal.
 
 The way this package is built is to absolutely minimise the amount of
 time you ever have to leave R to interact with Canvas directly. Some of
@@ -134,3 +135,18 @@ to do, and may be better suited to your needs so you can
 customise/format/wrangle the output as you like. I hope you find these
 functions useful, though! Let me know if there’s anything that doesn’t
 work or needs tweaking to make it more helpful.
+
+### Terminology
+
+Canvas itself is an American company; I work at a university in the UK.
+This means that there are certain, unfortunate, weird vocabulary
+mismatches that could be *very* confusing (separated by a common
+language, innit).
+
+| American/Canvas Default | UK/Sussex | Notes |
+|----|----|----|
+| Assignment | Assessment | Sometimes also “Assignment”! Generally I’ve stuck with “assignment” in the code but sometimes “assessment” in formatting/output. |
+| Course | Module | This is the big one. “Course” in the UK refers to the whole degree programme, and individual classes are called “modules”. The most important ID number you’ll typically need to work with `cnvs` will be `module_id`; see `cnvs::get_module_id()` for more info. Confusingly, the API query still uses “courses” - but I’m set in my ways now. |
+| Grade | Mark | Minor - I use both, but UK usage tends towards “mark”. |
+| Module | Unit | See, this is where it gets messy. Canvas DOES make use of the term “module”, but the default usage is for [grouped blocks of content](https://www.instructure.com/resources/blog/how-use-modules-build-courses-canvas). Since the UK term for a “course” is a “module”, we instead refer to this sense of “module” as a “unit”. So, in the US (and by Canvas default) you’d have *modules* of content within your *course*, which all together form your *degree*; in the UK (or,at least, at Sussex) you’d have *units* of content in your *module*, which altogether form your *course*. Clear as mud! |
+| Section | Section | Thankfully for my sanity and yours, organisations of students within a \[course/module\] are called “sections” no matter what. Sense prevails for the first and only time. |
