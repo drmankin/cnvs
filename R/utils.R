@@ -1,34 +1,23 @@
 #' Setup Canvas for API use
 #'
 #' Wrapper for two `rcanvas` functions: [rcanvas::set_canvas_token()] and
-#' [rcanvas::set_canvas_domain()]. Calls [Sys.getenv()] for setting the token,
+#' [rcanvas::set_canvas_domain()]. Calls [Sys.getenv()] for both,
 #' so this must be set up ahead of time (see Details).
 #'
-#' To use this function, you must obtain a Canvas token and set it as an
-#' environmental variable.
-#'
-#' To obtain a Canvas token:
-#'   * Log into Canvas.
-#'   * On the left bar, click Account, then Settings.
-#'   * Click New Access Token and follow the instructions.
-#'
-#' Save your Canvas token somewhere safe, where you can find it again. Then,
-#' open your Renviron file (by using e.g. [usethis::edit_r_environ()]) and
-#' create a new variable called  called `CANVAS_TOKEN` with your Canvas token in
-#' quotes, making sure to keep the last line of the file empty. Save the file,
-#' close it, and restart R (Session > Restart R) for the changes to take effect.
-#'
-#' @param domain A text string URL of the homepage of your university's Canvas
-#'   site. Default is for University of Sussex.
+#' To use this function, you must have a Canvas access token stored in your
+#' Renviron file as `CANVAS_TOKEN`, and the domain URL for your institution
+#' stored as `CANVAS_DOMAIN`. See [cnvs::set_renv_variables()] for more.
 #'
 #' @returns Sets the Canvas token and domain.
 #' @export
 
-canvas_setup <- function(domain = "https://canvas.sussex.ac.uk"){
+canvas_setup <- function(){
   if (Sys.getenv("CANVAS_TOKEN") == "")
-    stop("You have not successfully created an environmental CANVAS_TOKEN variable.")
+    stop("You have not successfully created an environmental CANVAS_TOKEN variable. Check your Renviron or run cnvs::set_renv_variables()")
+  if (Sys.getenv("CANVAS_DOMAIN") == "")
+    stop("You have not successfully created an environmental CANVAS_DOMAIN variable.")
   rcanvas::set_canvas_token(Sys.getenv("CANVAS_TOKEN"))
-  rcanvas::set_canvas_domain(domain)
+  rcanvas::set_canvas_domain(Sys.getenv("CANVAS_DOMAIN"))
 }
 
 #' Create a string for the current academic year
@@ -497,4 +486,104 @@ rcanvas_increment_pages <- function (base_url, n_pages)
 {
   stringr::str_replace(base_url, "([\\?&])(page=[0-9a-zA-Z]{1,})",
                        sprintf("\\1page=%s", n_pages))
+}
+
+
+#' Set Up Canvas variables
+#'
+#' Edits the user's .Renviron file with new or updated environ variables and sets these for use with Canvas/`cnvs`.
+#'
+#' This interactive function guides the user through the creation (or updating, if they already exist) of two variables, CANVAS_TOKEN and CANVAS_DOMAIN. The function first checks if there are already variables defined in the local .Renviron file with these names, and gives the option to update them or not.
+#' Once both values are put in, the function then sets these for use with Canvas using [rcanvas::set_canvas_token()] and [rcanvas::set_canvas_domain()] respectively.
+#'
+#' To obtain a Canvas access token:
+#'
+#' * Log into Canvas as normal.
+#' * Click on your profile picture, then on Settings.
+#' * Click on the "+ New access token" button and follow the instructions.
+#'
+#' Pro-tip: Save your Canvas token somewhere safe, where you can find it again. For example, paste it into a simple text document and save it as `canvas_token.txt` in a sensible place in your folders. Once you leave the page where it's displayed, you cannot retrieve it again!
+#'
+#' To obtain the Canvas domain:
+#'
+#' * Navigate in your browser to your Canvas dashboard
+#' * The Canvas domain is everything after `https://`, typically `canvas.your_uni_domain`, e.g. `canvas.sussex.ac.uk`
+#'
+#' @return Sets .Renviron variables and runs [cnvs::canvas_setup()] to communicate with Canvas
+#' @export
+#'
+#' @examples
+#'  \dontrun{
+#'  set_renv_variables()
+#' }
+#'
+set_renv_variables <- function(){
+  ## Intro message
+  message("This function will set up your access to Canvas via R.\nYou will need your Canvas access token and your uni's Canvas URL domain to proceed.")
+
+  ## Get current .Renviron file
+  scope = c("user", "project")
+  path <- usethis:::scoped_path_r(scope, ".Renviron", envvar = "R_ENVIRON_USER")
+  renv_lines <- readLines(path)
+
+  ## Check whether variable CANVAS_TOKEN already exists
+  if(any(grepl("CANVAS_TOKEN", renv_lines) == TRUE)){
+    message("You already have a 'CANVAS_TOKEN' in your .Renviron.")
+    token_resp <- utils::menu(title = "Overwrite with new token?",
+                              c("Yes, overwrite", "No, proceed without overwriting", "Abort"))
+  } else {
+    token_resp <- NA
+  }
+
+  ## If there IS a response but it's not 1 or 2, stop
+  if(!(token_resp %in% 1:2) & !is.na(token_resp)) {
+    stop("Canvas setup aborted", call. = FALSE)
+    ## If response was overwrite, replace CANVAS_TOKEN line with new one
+  } else if(token_resp %in% 1){
+    renv_lines[grepl("CANVAS_TOKEN", renv_lines)] <- paste0("CANVAS_TOKEN = ",
+                                                            readline(prompt = "Canvas token: "),
+                                                            "\n")
+
+    writeLines(renv_lines, path)
+    ## If there was no previous CANVAS_TOKEN, create one
+  } else if(is.na(token_resp)){
+    renv_lines <- c(renv_lines,
+                    paste0("CANVAS_TOKEN = ",
+                           readline(prompt = "Canvas token: ")),
+                    "\n")
+    writeLines(renv_lines, path)
+  }
+
+  ## Check whether variable CANVAS_DOMAIN already exists
+  if(any(grepl("CANVAS_DOMAIN", renv_lines) == TRUE)){
+    message("You already have a 'CANVAS_DOMAIN' in your .Renviron.")
+    domain_resp <- utils::menu(title = "Overwrite with new domain?",
+                               c("Yes, overwrite", "No, proceed without overwriting", "Abort"))
+  } else {
+    domain_resp <- NA
+  }
+
+  ## If there IS a response but it's not 1 or 2, stop
+  if(!(domain_resp %in% 1:2) & !is.na(domain_resp)) {
+    stop("Canvas setup aborted", call. = FALSE)
+    ## If response was overwrite, replace CANVAS_DOMAIN line with new one
+  } else if(domain_resp %in% 1){
+    renv_lines[grepl("CANVAS_DOMAIN", renv_lines)] <- paste0("CANVAS_DOMAIN = ",
+                                                             readline(prompt = "Canvas domain URL: "),
+                                                             "\n")
+
+    writeLines(renv_lines, path)
+    ## If there was no previous CANVAS_TOKEN, create one
+  } else if(is.na(domain_resp)){
+    renv_lines <- c(renv_lines,
+                    paste0("CANVAS_DOMAIN = ",
+                           readline(prompt = "Canvas domain URL: "),
+                           "\n")
+    )
+    writeLines(renv_lines, path)
+  }
+
+  message("Renviron variables set successfully!
+          To complete setup, restart your R session and run `cnvs::canvas_setup().")
+
 }

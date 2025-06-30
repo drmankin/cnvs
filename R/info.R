@@ -8,7 +8,6 @@
 #' @param academic_year Optional string to filter only specific academic
 #'   year(s). Accepts the format e.g. "22/23" or a vector of the same.
 #'
-#'
 #' @returns A tibble of information about all the Canvas modules that are
 #'   currently associated with the Canvas token set by [canvas_setup()].
 #' @export
@@ -57,40 +56,62 @@ get_module_list <- function(academic_modules = FALSE, academic_year = NA_charact
 #' @export
 
 get_users <- function(module_id){
-  url <- paste0(cnvs::rcanvas_canvas_url(), "/", paste("courses", module_id,
+  url <- paste0(rcanvas:::canvas_url(), "/", paste("courses", module_id,
                                                    "users", sep = "/"))
   args <- list(per_page = 100)
-  include <- cnvs::rcanvas_iter_args_list(NULL, "include[]")
+  include <- rcanvas:::iter_args_list(NULL, "include[]")
   args <- c(args, include)
-  dat <- cnvs::rcanvas_process_response(url, args)
+  dat <- rcanvas:::process_response(url, args)
   return(tibble::as_tibble(dat))
 }
 
 #' Get information about all students on a module
 #'
 #' @param module_id A Canvas module ID number (NOT university module code).
+#' @param cand_no_pattern Regex pattern to filter valid candidate numbers
 #'
 #' @returns A tibble of student information
 #' @export
 
-
-get_students <- function(module_id){
-  students <- cnvs::rcanvas_canvas_query(
-    paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/students"),
-    list(per_page = 100), "GET") |>
-    cnvs::rcanvas_paginate() |>
-    purrr::map(httr::content, "text") |>
-    purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
-    dplyr::bind_rows()
+get_students <- function(module_id, cand_no_pattern = "[0-9]{6}"){
+  url <- paste0(rcanvas:::canvas_url(), "/", paste("courses", module_id,
+                                                   "students", sep = "/"))
+  args <- list(per_page = 100)
+  include <- rcanvas:::iter_args_list(NULL, "include[]")
+  args <- c(args, include)
+  students <- rcanvas:::process_response(url, args)
 
   students <- students[!duplicated(students), ] |>
     dplyr::mutate(cand_no = gsub("Candidate No : ", "", sortable_name))
 
   students <- students |>
-    dplyr::select(-created_at, -sortable_name, -short_name, -integration_id, -pronouns) |>
-    dplyr::mutate(cand_no = as.numeric(cand_no)) |>
-    dplyr::filter(!is.na(cand_no))
+    dplyr::select(-created_at, -sortable_name, -short_name, -integration_id) |>
+    ## Check cand_no is a 6-digit number
+    ## Also removes alarming NA warning!
+    dplyr::filter(grepl(cand_no_pattern, cand_no)) |>
+    dplyr::mutate(cand_no = as.numeric(cand_no))
+
+  return(tibble::as_tibble(students))
 }
+
+## Old version - "GET" just stopped working one day :(
+# get_students <- function(module_id){
+#   students <- cnvs::rcanvas_canvas_query(
+#     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/students"),
+#     list(per_page = 100), "GET") |>
+#     cnvs::rcanvas_paginate() |>
+#     purrr::map(httr::content, "text") |>
+#     purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
+#     dplyr::bind_rows()
+#
+#   students <- students[!duplicated(students), ] |>
+#     dplyr::mutate(cand_no = gsub("Candidate No : ", "", sortable_name))
+#
+#   students <- students |>
+#     dplyr::select(-created_at, -sortable_name, -short_name, -integration_id, -pronouns) |>
+#     dplyr::mutate(cand_no = as.numeric(cand_no)) |>
+#     dplyr::filter(!is.na(cand_no))
+# }
 
 #' Create term information
 #'
