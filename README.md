@@ -1,0 +1,136 @@
+
+# *cnvs*: A (highly) opinionated interface with the Canvas VLE
+
+Or, if you like: Taking the “AAAAA” out of Canvas (get it?)
+
+Note that **this package is designed to work specifically with Canvas at
+the University of Sussex**, particularly in the School of Psychology,
+and I make no guarantees whatsoever that it will work for anyone else.
+I’ve tried to build in the possibility for variation, but do let me know
+if you want to use the package and are finding its (i.e. my) opinions
+are causing problems!
+
+## Installation
+
+``` r
+if(!require(remotes)){
+  install.packages('remotes')
+}
+
+remotes::install_github("drmankin/cnvs")
+```
+
+## Setup
+
+In order to work with Canvas, you will need two key elements:
+
+- A Canvas token
+- Your institution’s Canvas URL
+
+This information will be stored locally in your .Renviron file to
+authenticate your requests. This only needs to be done **once** per
+terminal, or if your information changes (e.g. you move institutions).
+
+### Canvas Token
+
+To obtain a Canvas access token:
+
+- Log into Canvas.
+- Click on your profile picture, then on Settings.
+- Click on the “+ New access token” button and follow the instructions.
+
+**Pro-tip**: Save your Canvas token somewhere safe, where you can find
+it again. For example, paste it into a simple text document and save it
+as `canvas_token.txt` in a sensible place in your folders. Once you
+leave the page where it’s displayed, you cannot retrieve it again!
+
+### Canvas Domain
+
+To obtain the Canvas domain:
+
+- Navigate in your browser to your Canvas dashboard
+- The Canvas domain is everything after `https://`, typically
+  `canvas.your_uni_domain`, e.g. `canvas.sussex.ac.uk`
+
+### Storing .Renviron values
+
+<!-- This package includes an interactive function to edit the .Renviron file with the correct variable names. After package installation, when you have both your Canvas token and domain to hand, run the following in the Console: -->
+<!-- ```{r, eval=FALSE} -->
+<!-- cnvs::set_renv_variables() -->
+<!-- ``` -->
+
+To create the variables manually, open your .Renviron file, for example
+using the `usethis` package:
+
+``` r
+if(!require(remotes)){
+  install.packages('usethis')
+}
+
+usethis::edit_r_environ()
+```
+
+Then, paste the following into the .Renviron file, replacing the
+placeholders with your own information and ensuring that there is a
+blank line at the end of the file:
+
+``` r
+CANVAS_TOKEN = "your_canvas_token"
+CANVAS_DOMAIN = "your_canvas_domain"
+```
+
+Save the .Renviron file and close it.
+
+Make sure that you **restart your R session** for the .Renviron changes
+to take effect.
+
+## Getting Started
+
+Begin any work with `cnvs` with the following:
+
+``` r
+library(cnvs)
+cnvs::canvas_setup()
+```
+
+The function `cnvs::canvas_setup()` will set your token and domain and
+establish a connection with the Canvas API, which is essential for any
+further requests. This function needs to run at the start of every new
+session - so will need to be rerun if e.g. your session crashes.
+
+You’re now ready to go!
+
+<!-- ## Tasks -->
+<!-- The following vignettes will demonstrate a recommended workflow for some tasks you might be interested in -->
+<!-- - Getting student and module information -->
+<!-- - Creating quizzes -->
+<!-- - Creating pages with Quarto -->
+<!-- - Pulling grades -->
+<!-- - Getting assessment information -->
+
+## Notes on Working with `cnvs`
+
+This package tries to streamline the iterative nature of querying the
+Canvas API. For essentially any information that Canvas holds - for
+users, assessments, questions in a quiz, answers to a particular
+question, there is a corresponding ID number that Canvas uses to
+identify that specific thing.
+
+The way this package is built is to absolutely minimise the amount of
+time you ever have to leave R to interact with Canvas directly. Some of
+these are data-management operations to get student, assessment etc.
+data; and some are just because I personally hate having to click on
+things (see e.g. `cnvs::quarto_annc` and `cnvs::quarto_page` for writing
+and posting announcements and pages in Canvas using Quarto, for
+instance).
+
+This package also has a LOT of opinions about what information you need
+or want; how it should be formatted; and what you’re going to do with
+it. Generally speaking, they’re convenience functions for more generally
+applicable [`rcanvas`](https://github.com/daranzolin/rcanvas) functions
+to make my life easier for my common tasks. You may find that the
+relevant `rcanvas` function makes fewer assumptions about what you want
+to do, and may be better suited to your needs so you can
+customise/format/wrangle the output as you like. I hope you find these
+functions useful, though! Let me know if there’s anything that doesn’t
+work or needs tweaking to make it more helpful.
