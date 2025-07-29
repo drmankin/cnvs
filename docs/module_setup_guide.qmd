@@ -94,7 +94,7 @@ Don't forget to check the `quiz_info` object carefully to make sure the dates, t
 
 ### Create Quizzes
 
-Easier than you might have thought! Loop over the `quiz_info` object above and feed into `cnvs::create_quizzes()` which will create the quizzes on Canvas. 
+Easier than you might have thought! Loop over the `quiz_info` object above and feed into `cnvs::create_quizzes()` which will create the quizzes on Canvas.
 
 ```{r}
 purrr::pmap(quiz_info, cnvs::create_quizzes)
@@ -108,9 +108,9 @@ The whole sequence again, but now for ChallengRs. We actually don't need to run 
 
 Setting `challengr = TRUE` has a few implications:
 
-- All quizzes will lock at the last lock date and time, rather than each week.
-- Unlimited attempts are allowed, and there is no access code.
-- If no `quiz_name_fn` is provided, it will generate names on the pattern of "Week X ChallengR"
+-   All quizzes will lock at the last lock date and time, rather than each week.
+-   Unlimited attempts are allowed, and there is no access code.
+-   If no `quiz_name_fn` is provided, it will generate names on the pattern of "Week X ChallengR"
 
 ```{r}
 
@@ -126,9 +126,9 @@ challengr_info <- create_quiz_info(module_code, #<1>
 purrr::pmap(challengr_info, cnvs::create_quizzes)
 ```
 
-1. All the same information as above for marked quizzes. Omitted arguments will be set automatically or are not necessary for ChallengRs.
-2. Turn on ChallengRs
-3. Post the ChallengRs on Canvas
+1.  All the same information as above for marked quizzes. Omitted arguments will be set automatically or are not necessary for ChallengRs.
+2.  Turn on ChallengRs
+3.  Post the ChallengRs on Canvas
 
 ### Updating Details
 
@@ -155,16 +155,11 @@ purrr::map(.x = these_quizzes,
 )
 ```
 
-
 ## Creating Content
 
 ### Pages
 
-
-
 ### Announcements
-
-
 
 ## Automatic Updating
 
@@ -213,9 +208,4 @@ cnvs::update_quizzes(module_id = module_id,
 ## This will need to be updated in the future for years where the spring break falls in the middle of term
 ```
 
-
 ### Update Access Code
-
-
-
-

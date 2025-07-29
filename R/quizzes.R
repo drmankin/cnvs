@@ -306,7 +306,7 @@ create_quizzes <- function(week, quiz_name, unlock, lock, module_id, quiz_desc,
   }
 
   args <- list(
-    access_token = cnvs::rcanvas_check_token(),
+    access_token = rcanvas:::check_token(),
     `quiz[title]` = quiz_name,
     `quiz[description]` = quiz_desc,
     `quiz[quiz_type]` = quiz_type,
@@ -319,7 +319,7 @@ create_quizzes <- function(week, quiz_name, unlock, lock, module_id, quiz_desc,
     `quiz[lock_at]` = lock,
     `quiz[published]` = FALSE
   )
-  quiz <- cnvs::rcanvas_canvas_query(
+  quiz <- rcanvas:::canvas_query(
     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes"),
     args, "POST")
 }
@@ -408,6 +408,8 @@ update_quizzes <- function(module_code, module_id,
     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes/", quiz_id),
     args, "PUT")
 }
+
+
 
 #' #' Create information about quiz groups
 #' #'

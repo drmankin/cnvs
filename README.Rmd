@@ -119,7 +119,7 @@ This package also has a LOT of opinions about what information you need or want;
 Canvas itself is an American company; I work at a university in the UK. This means that there are certain, unfortunate, weird vocabulary mismatches that could be *very* confusing (separated by a common language, innit).
 
 | American/Canvas Default | UK/Sussex | Notes |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | Assignment | Assessment | Sometimes also "Assignment"! Generally I've stuck with "assignment" in the code but sometimes "assessment" in formatting/output. |
 | Course | Module | This is the big one. "Course" in the UK refers to the whole degree programme, and individual classes are called "modules". The most important ID number you'll typically need to work with `cnvs` will be `module_id`; see `cnvs::get_module_id()` for more info. Confusingly, the API query still uses "courses" - but I'm set in my ways now. |
 | Grade | Mark | Minor - I use both, but UK usage tends towards "mark". |
