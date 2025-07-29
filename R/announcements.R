@@ -5,8 +5,8 @@
 
 get_anncs <- function(module_id){
 
-  cnvs::rcanvas_process_response(
-    url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id, "discussion_topics")),
+  rcanvas:::process_response(
+    url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "discussion_topics")),
     args = list(
       only_announcements = TRUE
     )
@@ -84,8 +84,8 @@ quarto_annc <- function(module_id, file_path, page_title, post_at = NULL){
 
   ## Send to Canvas
 
-cnvs::rcanvas_canvas_query(
-  url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id, "discussion_topics", annc_id)),
+rcanvas:::canvas_query(
+  url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "discussion_topics", annc_id)),
   args = list(
     `title` = page_title,
     `message` = page_body,

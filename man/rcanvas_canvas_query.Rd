@@ -18,5 +18,5 @@ Response from Canvas
 }
 \description{
 Copied from the unexported `canvas_query()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
-See [cnvs::rcanvas_canvas_url()] for generating the API URL
+See [rcanvas:::canvas_url()] for generating the API URL
 }

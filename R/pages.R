@@ -5,7 +5,7 @@
 
 get_pages <- function(module_id){
 
-  url = paste0(cnvs::canvas_url(), file.path("/courses", module_id, "pages"))
+  url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "pages"))
 
   args = list(
     sort = "created_at"
@@ -86,7 +86,7 @@ quarto_page <- function(module_id, file_path, syllabus = FALSE, page_id = "", pa
   ## Send to Canvas
   if (syllabus == TRUE){
     rcanvas:::canvas_query(
-      url = paste0(cnvs::canvas_url(), file.path("/courses", module_id)),
+      url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id)),
       args = list(
         `course[syllabus_body]` = page_body
       ),
@@ -94,7 +94,7 @@ quarto_page <- function(module_id, file_path, syllabus = FALSE, page_id = "", pa
     )
   } else {
     rcanvas:::canvas_query(
-    url = file.path(cnvs::canvas_url(), "courses", module_id, "pages", page_id),
+    url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "pages", page_id)),
     args = list(
       `wiki_page[title]` = page_title,
       `wiki_page[body]` = page_body,

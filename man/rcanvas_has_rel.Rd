@@ -7,7 +7,9 @@
 rcanvas_has_rel(x, rel)
 }
 \arguments{
-\item{rel}{}
+\item{x}{Input}
+
+\item{rel}{rel value to search for in `x`}
 }
 \value{
 A Boolean

@@ -401,10 +401,10 @@ update_quizzes <- function(module_code, module_id,
     args <- other_args
   }
 
-  args <- c(list(access_token = cnvs::rcanvas_check_token()),
+  args <- c(list(access_token = rcanvas:::check_token()),
             args)
 
-  cnvs::rcanvas_canvas_query(
+  rcanvas:::canvas_query(
     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes/", quiz_id),
     args, "PUT")
 }
@@ -443,12 +443,12 @@ update_quizzes <- function(module_code, module_id,
 #' create_quiz_groups <- function(module_id, quiz_id, group_name, pick_count, points){
 #'
 #'   args <- list(
-#'     access_token = cnvs::rcanvas_check_token(),
+#'     access_token = rcanvas:::check_token(),
 #'     `quiz_groups[][name]` = group_name,
 #'     `quiz_groups[][pick_count]` = pick_count,
 #'     `quiz_groups[][question_points]` = points
 #'   )
-#'   quiz <- cnvs::rcanvas_canvas_query(
+#'   quiz <- rcanvas:::canvas_query(
 #'     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes/", quiz_id, "/groups"),
 #'     args, "POST")
 #' }

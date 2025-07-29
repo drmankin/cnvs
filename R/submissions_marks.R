@@ -20,10 +20,10 @@ get_submissions <- function (module_id, type, type_id, add_args = list())
   url <- sprintf("%scourses/%s/%s/%s/submissions", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id, type, type_id)
 
-    args <- append(list(access_token = cnvs::rcanvas_check_token(), per_page = 100),
+    args <- append(list(access_token = rcanvas:::check_token(), per_page = 100),
                  add_args)
 
-  cnvs::rcanvas_process_response(url, args)  |>
+  rcanvas:::process_response(url, args)  |>
     dplyr::bind_rows() |>
     dplyr::mutate(course_id = module_id) |>
     tibble::as_tibble()
@@ -43,8 +43,8 @@ get_submissions <- function (module_id, type, type_id, add_args = list())
 get_all_quizzes <- function(module_id){
   url <- sprintf("%scourses/%s/quizzes", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id)
-  args <- list(access_token = cnvs::rcanvas_check_token(), per_page = 100)
-  quizzes <- cnvs::rcanvas_process_response(url, args) |>
+  args <- list(access_token = rcanvas:::check_token(), per_page = 100)
+  quizzes <- rcanvas:::process_response(url, args) |>
     dplyr::bind_rows() |>
     dplyr::mutate(course_id = module_id) |>
     tibble::as_tibble()
@@ -61,8 +61,8 @@ get_all_quizzes <- function(module_id){
 get_quiz_questions <- function(module_id, quiz_id){
   url <- sprintf("%scourses/%s/quizzes/%s/questions", "https://canvas.sussex.ac.uk/api/v1/",
                  module_id, quiz_id)
-  args <- list(access_token = cnvs::rcanvas_check_token(), per_page = 100)
-  quizzes <- cnvs::rcanvas_process_response(url, args) |>
+  args <- list(access_token = rcanvas:::check_token(), per_page = 100)
+  quizzes <- rcanvas:::process_response(url, args) |>
     dplyr::bind_rows() |>
     dplyr::mutate(course_id = module_id) |>
     tibble::as_tibble()

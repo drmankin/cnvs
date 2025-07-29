@@ -81,6 +81,17 @@ get_students <- function(module_id, cand_no_pattern = "[0-9]{6}"){
   args <- c(args, include)
   students <- rcanvas:::process_response(url, args)
 
+  ## Old version - recover if otehr doesn't work
+# get_students <- function(module_id){
+#   students <- rcanvas:::canvas_query(
+#     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/students"),
+#     list(per_page = 100)) |>
+#     rcanvas:::paginate() |>
+#     purrr::map(httr::content, "text") |>
+#     purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
+#     dplyr::bind_rows()
+
+
   students <- students[!duplicated(students), ] |>
     dplyr::mutate(cand_no = gsub("Candidate No : ", "", sortable_name))
 

@@ -234,8 +234,8 @@ publish_module <- function(search_term){
 
   module_id <- cnvs::get_module_id(search_term)
 
-  cnvs::rcanvas_canvas_query(
-    url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id)),
+  rcanvas:::canvas_query(
+    url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id)),
     args = list(
       `offer` = TRUE
     ),
@@ -253,10 +253,10 @@ publish_module <- function(search_term){
 
 get_resp <- function(url, args){
 
-  args <- c(list(access_token = cnvs::rcanvas_check_token(), per_page = 100),
+  args <- c(list(access_token = rcanvas:::check_token(), per_page = 100),
             args)
 
-  resp <- cnvs::rcanvas_process_response(url, args) |>
+  resp <- rcanvas:::process_response(url, args) |>
   dplyr::mutate(course_id = module_id)
 
   return(resp)
@@ -286,7 +286,7 @@ canvas_url <- function(){
 #' Send a query to Canvas
 #'
 #' Copied from the unexported `canvas_query()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
-#' See [cnvs::rcanvas_canvas_url()] for generating the API URL
+#' See [rcanvas:::canvas_url()] for generating the API URL
 #'
 #' @param urlx A Canvas API URL
 #' @param args Arguments to append to the API request
@@ -296,9 +296,9 @@ canvas_url <- function(){
 #' @export
 
 rcanvas_canvas_query <- function(urlx, args = NULL, type = "GET") {
-  args <- cnvs::rcanvas_sc(args)
+  args <- rcanvas:::sc(args)
   resp_fun_args <- list(url = urlx, httr::user_agent("rcanvas - https://github.com/daranzolin/rcanvas"),
-                        httr::add_headers(Authorization = paste("Bearer", cnvs::rcanvas_check_token())))
+                        httr::add_headers(Authorization = paste("Bearer", rcanvas:::check_token())))
   if (type %in% c("POST", "PUT"))
     resp_fun_args$body = args
   else resp_fun_args$query = args
@@ -337,7 +337,7 @@ rcanvas_check_token <- function ()
 rcanvas_process_response <- function (url, args)
   {
     resp <- rcanvas:::canvas_query(url, args, "GET")
-    d <- cnvs::rcanvas_paginate(resp) |> purrr::map(httr::content, "text") |>
+    d <- rcanvas:::paginate(resp) |> purrr::map(httr::content, "text") |>
       purrr::map(jsonlite::fromJSON, flatten = TRUE)
     dplyr::bind_rows(d)
 }
@@ -366,7 +366,7 @@ rcanvas_iter_args_list <- function (x, label)
 #'
 #' Copied from the unexported `paginate()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
 #'
-#' @param x Response from Canvas from e.g. [cnvs::rcanvas_canvas_query()]
+#' @param x Response from Canvas from e.g. [rcanvas:::canvas_query()]
 #' @param showProgress Show progress bar
 #'
 #' @returns Paginated responses (probably)
@@ -380,43 +380,43 @@ rcanvas_paginate <- function (x, showProgress = FALSE)
   if (is.null(pages))
     return(first_response)
   should_continue <- TRUE
-  if (cnvs::rcanvas_has_rel(pages, "last")) {
-    last_page <- cnvs::rcanvas_get_page(x, "last")
+  if (rcanvas:::has_rel(pages, "last")) {
+    last_page <- rcanvas:::get_page(x, "last")
     n_pages <- readr::parse_number(stringr::str_extract(last_page,
                                                         "page=[0-9]{1,}"))
     if (n_pages == 1) {
       return(first_response)
     }
-    pages <- cnvs::rcanvas_increment_pages(last_page, 2:n_pages)
+    pages <- rcanvas:::increment_pages(last_page, 2:n_pages)
     if (showProgress) {
       bar = utils::txtProgressBar(max = n_pages, style = 3)
     }
     queryfunc = function(...) {
       if (showProgress)
         bar$up(bar$getVal() + 1)
-      cnvs::rcanvas_canvas_query(...)
+      rcanvas:::canvas_query(...)
     }
-    responses <- pages |> purrr::map(queryfunc, args = list(access_token = cnvs::rcanvas_check_token()))
+    responses <- pages |> purrr::map(queryfunc, args = list(access_token = rcanvas:::check_token()))
     responses <- c(first_response, responses)
     return(responses)
   }
   else {
-    if (cnvs::rcanvas_has_rel(httr::headers(x)$link, "next")) {
-      pages[[1]] <- cnvs::rcanvas_get_page(x, "current")
+    if (rcanvas:::has_rel(httr::headers(x)$link, "next")) {
+      pages[[1]] <- rcanvas:::get_page(x, "current")
       inc <- 2
       while (should_continue) {
-        page_temp <- cnvs::rcanvas_get_page(x, "next")
+        page_temp <- rcanvas:::get_page(x, "next")
         pages[[inc]] <- page_temp
-        x <- cnvs::rcanvas_canvas_query(page_temp, args = list(access_token = cnvs::rcanvas_check_token()),
+        x <- rcanvas:::canvas_query(page_temp, args = list(access_token = rcanvas:::check_token()),
                           type = "HEAD")
-        if (!cnvs::rcanvas_has_rel(httr::headers(x)$link, "next")) {
+        if (!rcanvas:::has_rel(httr::headers(x)$link, "next")) {
           should_continue <- FALSE
         }
         else {
           inc <- inc + 1
         }
       }
-      responses <- pages |> purrr::map(cnvs::rcanvas_canvas_query, args = list(access_token = cnvs::rcanvas_check_token()))
+      responses <- pages |> purrr::map(rcanvas:::canvas_query, args = list(access_token = rcanvas:::check_token()))
     }
   }
 }

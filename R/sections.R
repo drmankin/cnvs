@@ -15,8 +15,8 @@
 #' @export
 
 create_section <- function(module_id, section_name){
-  cnvs::rcanvas_canvas_query(
-    url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id, "sections")),
+  rcanvas:::canvas_query(
+    url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "sections")),
     args = list(
       `course_section[name]` = section_name
     ),
@@ -33,8 +33,8 @@ create_section <- function(module_id, section_name){
 #' @export
 
 get_sections <- function(module_id, search_term = ""){
-  cnvs::rcanvas_canvas_query(
-    url = paste0(cnvs::rcanvas_canvas_url(), file.path("/courses", module_id, "/sections")),
+  rcanvas:::canvas_query(
+    url = paste0(rcanvas:::canvas_url(), file.path("/courses", module_id, "/sections")),
     args = list(
       `include[]` = "students",
       search_term = search_term,
@@ -42,7 +42,7 @@ get_sections <- function(module_id, search_term = ""){
     ),
     "GET"
   )|>
-    cnvs::rcanvas_paginate() |>
+    rcanvas:::paginate() |>
     purrr::map(httr::content, "text") |>
     purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
     dplyr::bind_rows()
@@ -58,8 +58,8 @@ get_sections <- function(module_id, search_term = ""){
 #' @export
 
 enroll_in_section <- function(section_id, user_id){
-  cnvs::rcanvas_canvas_query(
-    url = paste0(cnvs::rcanvas_canvas_url(), file.path("/sections", section_id, "enrollments")),
+  rcanvas:::canvas_query(
+    url = paste0(rcanvas:::canvas_url(), file.path("/sections", section_id, "enrollments")),
     args = list(
       `enrollment[user_id]` = user_id
     ),

@@ -7,7 +7,7 @@
 rcanvas_paginate(x, showProgress = FALSE)
 }
 \arguments{
-\item{x}{Response from Canvas from e.g. [cnvs::rcanvas_canvas_query()]}
+\item{x}{Response from Canvas from e.g. [rcanvas:::canvas_query()]}
 
 \item{showProgress}{Show progress bar}
 }
