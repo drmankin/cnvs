@@ -79,7 +79,7 @@ create_quiz_questions <- function(quiz_id, data){
     dplyr::rowwise() |>
     dplyr::group_split()
 
-  data_args <- purrr::map(split_data, make_question_args)
+  data_args <- purrr::map(split_data, ~make_args(data = .x, type = "question"))
 
   purrr::map2(
     quiz_id, data_args,

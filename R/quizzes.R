@@ -63,15 +63,15 @@ create_quiz_desc <- function(n_questions = 5, standard_time_limit = 12, challeng
 #'
 #' If quizzes are "ChallengRs", they will be named accordingly and be practice quizzes.
 #'
-#' @param module_code  string containing the module code in the format "123C4"
-#'   or "C1234".
-#' @param quiz_desc Quiz description as a string, which can include basic HTML
+#' @param module_code A string containing the module code in the format "123C4"
+#'   or "C1234". Either module_code or module_id must be provided.
+#' @param module_id Canvas module ID number. Either module_code or module_id must be provided.
+#' @param description Quiz description as a string, which can include basic HTML
 #'   formatting tags. If `NULL` (the default), runs
 #'   [cnvs::create_quiz_desc()] with default settings. Also accepts
 #'   either a single string (which will be applied to all quizzes) or a list of
 #'   two descriptions, named `practice` and `marked`. The `practice` description
-#'   will only be used if `first_quiz_practice` is `TRUE` and will be used for
-#'   the first quiz only.
+#'   will only be used for the week(s) indicated in `make_practice`.
 #' @param first_unlock_date Date as "YYYY/MM/DD" of the date that the first quiz
 #'   of term should unlock.
 #' @param unlock_time Hours as a number past midnight when the quizzes should
@@ -80,7 +80,8 @@ create_quiz_desc <- function(n_questions = 5, standard_time_limit = 12, challeng
 #'   term should lock.
 #' @param lock_time Hours as a number past midnight when the quizzes should lock
 #'   each week. E.g. for 6pm, enter `18`.
-#' @param mopup_day Optional. If mop-up quizzes are allowed, what day should the quiz close on? Lock time will default to 11:59 on that day.
+#' @param mopup_day Optional. If mop-up quizzes are allowed, what day should the
+#'  quiz close on? Lock time will be set to to 23:59:59 on that day.
 #' @param quiz_type Either one of "assignment", "practice_quiz",
 #'   "graded_survey", or "survey" (which will be applied to all) or a vector of
 #'   combinations of the same in the order in which they should be applied.
@@ -89,14 +90,14 @@ create_quiz_desc <- function(n_questions = 5, standard_time_limit = 12, challeng
 #'   numbers, or `NULL` if none should be changed. For those quizzes indicated,
 #'   the following will be changed:
 #'     * `quiz_type` will be set to "practice_quiz"
-#'     * `quiz_name` will be updated so the word "(Practice)" is at the end of
+#'     * `title` will be updated so the word "(Practice)" is at the end of
 #'     the title
-#'     * `quiz_desc` will be updated to the description stored in "$practice"
+#'     * `description` will be updated to the description stored in "$practice"
 #'     * `allowed_attempts` will be set to -1 (which will translate to
 #'     unlimited)
 #'     * `access_code` will be set to FALSE (which will be converted to NULL
-#'     when combined with [convenrhelpr::create_quizzes()])
-#' @param quiz_name_fn A function to name the quizzes. Default is `function(x)
+#'     when combined with [cnvs::create_quizzes()])
+#' @param title_fn A function to name the quizzes. Default is `function(x)
 #'   paste("Week", x, "Worksheet", collapse = " ")`. Minimally requires `x`,
 #'   which is a number corresponding to the week of term for that quiz.
 #' @param n_questions Total number of questions the quiz will contain
@@ -112,37 +113,49 @@ create_quiz_desc <- function(n_questions = 5, standard_time_limit = 12, challeng
 #' @param challengr Should the quizzes be ChallengRs?
 #'
 #' @returns A tibble of quiz information to pass to
-#'   [convenrhelpr::create_quizzes()].
+#'   [cnvs::create_quizzes()].
 #' @export
 
-create_quiz_info <- function(module_code, quiz_desc = NULL,
+create_quiz_info <- function(module_code, module_id, description = NULL,
                              first_unlock_date, unlock_time,
                              last_lock_date, lock_time,
                              mopup_day,
                              quiz_type = c("assignment", "practice_quiz", "graded_survey", "survey"),
                              make_practice = 1,
-                             quiz_name_fn = function(x) paste("Week", x, "Worksheet", collapse = " "),
+                             title_fn = function(x) paste("Week", x, "Worksheet", collapse = " "),
                              n_questions = 5,
                              standard_time_limit = 12,
                              has_break_weeks = TRUE, break_weeks = 11:13,
                              challengr = FALSE){
 
-  # Checks whether the module code input is formatted correctly
-  if (!stringr::str_detect(module_code, "^[A-Z]?[0-9]+[A-Z]?[0-9]+")){
-    stop("Module code is not specified correctly. Please enter a module code formatted as C1234 or 123C4.")
+  # module ID/code input validation
+  if(missing(module_code) & missing(module_id)){
+    stop("You must provide either module_code or module_id")
+  }
+
+  if(missing(module_id) & !missing(module_code)){
+    if (!stringr::str_detect(module_code, "^[A-Z]?[0-9]+[A-Z]?[0-9]+"))
+      stop("Module code is not specified correctly. Please enter a module code formatted as C1234 or 123C4.")
+
+    module_id <- try(cnvs::get_module_id(module_code), silent = TRUE)
+
+    if(inherits(module_id, "try-error")){
+      cnvs::canvas_setup()
+      module_id <- cnvs::get_module_id(module_code)
+    }
   }
 
   # If no description provided, defaults to the cnvs-generated one
-  if(is.null(quiz_desc)){
-    quiz_desc <- cnvs::create_quiz_desc(n_questions = n_questions,
+  if(is.null(description)){
+    description <- cnvs::create_quiz_desc(n_questions = n_questions,
                                   standard_time_limit = standard_time_limit,
                                   challengr = challengr)
   }
 
   # Set default quiz types and names for ChallengRs if none provided
 
-  if(challengr & missing(quiz_name_fn)){
-    quiz_name_fn <- function(x) paste("Week", x, "ChallengR", collapse = " ")
+  if(challengr & missing(title_fn)){
+    title_fn <- function(x) paste("Week", x, "ChallengR", collapse = " ")
   }
 
   if(challengr & missing(quiz_type)){
@@ -154,17 +167,8 @@ create_quiz_info <- function(module_code, quiz_desc = NULL,
   }
 
   # Checks if the quiz description input is structured correctly
-  if(length(quiz_desc) > 1 & !all(names(quiz_desc) == c("practice", "marked"))){
+  if(length(description) > 1 & !all(names(description) == c("practice", "marked"))){
     stop("Quiz description not constructed correctly, please provide two descriptions named `practice` and `marked`.")
-  }
-
-  # Try to get the Canvas module id
-  module_id <- try(cnvs::get_module_id(module_code), silent = TRUE)
-
-  # If that didn't work, try running canvas_setup() to set the domain and token
-  if(inherits(module_id, "try-error")){
-    cnvs::canvas_setup()
-    module_id <- cnvs::get_module_id(module_code)
   }
 
   # Calculate the total weeks spanned by the practicals
@@ -172,9 +176,9 @@ create_quiz_info <- function(module_code, quiz_desc = NULL,
 
   # Generate an initial table with lock and unlock dates and times, module ID, week numbers, and allowed attempts
   quiz_times <- tibble::tibble(
-    unlock = seq.Date(as.Date(first_unlock_date), by = "week", length.out = total_weeks) + lubridate::hours(unlock_time),
+    unlock_at = seq.Date(as.Date(first_unlock_date), by = "week", length.out = total_weeks) + lubridate::hours(unlock_time),
     ## This nonsense is to get the sequence of days right counting from the last lock date!
-    lock = seq.Date(as.Date(last_lock_date) - lubridate::weeks(total_weeks - 1),
+    lock_at = seq.Date(as.Date(last_lock_date) - lubridate::weeks(total_weeks - 1),
                     by = "week", length.out = total_weeks) + lubridate::hours(lock_time),
     module_id = module_id,
     week = 1:total_weeks,
@@ -189,12 +193,13 @@ create_quiz_info <- function(module_code, quiz_desc = NULL,
     weekdays <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
     this_weekday <- which(weekdays == mopup_day)
 
+    ## THIS IS THROWING AN ERROR BUT MY HEAD HURTS. FIX IT
     quiz_times <- quiz_times |>
       dplyr::mutate(
-        lock = dplyr::case_when(
-          week != max(week) ~ (cnvs::next_weekday(date = as.Date(unlock), weekday = this_weekday)
+        lock_at = dplyr::case_when(
+          week != max(week) ~ (cnvs::find_weekday(date = as.Date(unlock_at), weekday = this_weekday, direction = "next")
                       + lubridate::hours(23) + lubridate::minutes(59) + lubridate::seconds(59)),
-          week == max(week) ~ lock
+          week == max(week) ~ lock_at
       )
       )
   }
@@ -222,27 +227,27 @@ create_quiz_info <- function(module_code, quiz_desc = NULL,
     ) |>
     dplyr::rowwise() |>
     dplyr::mutate(
-      quiz_name = do.call(quiz_name_fn, list(x = week)),
+      title = do.call(title_fn, list(x = week)),
       access_code = TRUE
     )
 
   # Set the description for the quiz - the same for all if there's only one, or the "$marked" description if there's two
-  if(length(quiz_desc) == 1){
+  if(length(description) == 1){
     quiz_times <- quiz_times |>
       dplyr::mutate(
-        quiz_desc = quiz_desc
+        description = description
       )
   } else (
     quiz_times <- quiz_times |>
       dplyr::mutate(
-        quiz_desc = quiz_desc$marked
+        description = description$marked
       )
   )
 
   # Make changes to any weeks that should be practice weeks
   quiz_times$quiz_type[make_practice] <- "practice_quiz"
-  quiz_times$quiz_name[make_practice] <- gsub("(.*)", "\\1 (Practice)", quiz_times$quiz_name[make_practice])
-  quiz_times$quiz_desc[make_practice] <- quiz_desc$practice
+  quiz_times$title[make_practice] <- gsub("(.*)", "\\1 (Practice)", quiz_times$title[make_practice])
+  quiz_times$description[make_practice] <- description$practice
   quiz_times$allowed_attempts[make_practice] <- -1
   quiz_times$access_code[make_practice] <- FALSE
 
@@ -250,7 +255,7 @@ create_quiz_info <- function(module_code, quiz_desc = NULL,
     quiz_times <- quiz_times |>
       dplyr::mutate(
         ## Lock ChallengRs only at the end of term
-        lock = (as.Date(last_lock_date) + lubridate::hours(lock_time)) |>
+        lock_at = (as.Date(last_lock_date) + lubridate::hours(lock_time)) |>
           lubridate::format_ISO8601(usetz = FALSE, precision = "ymdhm"),
         allowed_attempts = -1,
         access_code = FALSE,
@@ -264,21 +269,24 @@ create_quiz_info <- function(module_code, quiz_desc = NULL,
 
 }
 
-#' Create Canvas quizzes
+#' Create (multiple) Canvas quizzes
 #'
 #' Create weekly worksheet quizzes on your Canvas site. For making multiple
 #' quizzes at once, use in conjunction with [purrr::pmap()] and a tibble of
 #' associated quiz info generated by [cnvs::create_quiz_info()].
 #'
+#' This function is built to work with others for generating multiple similar
+#' quizzes at once. If you want a more basic version with fewer assumptions,
+#' see [cnvs::create_quiz()].
+#'
 #' @param week Week of term
-#' @param quiz_name Title of the quiz to be created
-#' @param unlock A datetime using [format_ISO8601()] indicating when the quiz
+#' @param title Title of the quiz to be created
+#' @param unlock_at A datetime using [format_ISO8601()] indicating when the quiz
 #'   should be unlocked.
-#' @param lock A datetime using [format_ISO8601()] indicating when the quiz
+#' @param lock_at A datetime using [format_ISO8601()] indicating when the quiz
 #'   should be locked.
-#' @param module_id Canvas ID number of the module where the quizzes will be created
-#'   (note: NOT module code!)
-#' @param quiz_desc Single string containing the text description for the quiz.
+#' @param module_id Canvas module ID number
+#' @param description Single string containing the text description for the quiz.
 #'   Accepts basic HTML formatting tags.
 #' @param quiz_type Either one of "assignment", "practice_quiz",
 #'   "graded_survey", or "survey" (which will be applied to all) or a vector of
@@ -294,7 +302,7 @@ create_quiz_info <- function(module_code, quiz_desc = NULL,
 #' @returns Answer from Canvas; quizzes should appear on Canvas.
 #' @export
 
-create_quizzes <- function(week, quiz_name, unlock, lock, module_id, quiz_desc,
+create_quizzes <- function(week, title, unlock_at, lock_at, module_id, description,
                            quiz_type, time_limit, allowed_attempts, access_code){
 
   quiz_access <- NULL
@@ -307,18 +315,54 @@ create_quizzes <- function(week, quiz_name, unlock, lock, module_id, quiz_desc,
 
   args <- list(
     access_token = rcanvas:::check_token(),
-    `quiz[title]` = quiz_name,
-    `quiz[description]` = quiz_desc,
+    `quiz[title]` = title,
+    `quiz[description]` = description,
     `quiz[quiz_type]` = quiz_type,
     `quiz[time_limit]` = time_limit, # NULL for no time limit
     `quiz[shuffle_answers]` = TRUE,
     `quiz[hide_results]` = "always",
     `quiz[allowed_attempts]` = allowed_attempts,
     `quiz[access_code]` = quiz_access,
-    `quiz[unlock_at]` = unlock,
-    `quiz[lock_at]` = lock,
+    `quiz[unlock_at]` = unlock_at,
+    `quiz[lock_at]` = lock_at,
     `quiz[published]` = FALSE
   )
+  quiz <- rcanvas:::canvas_query(
+    paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes"),
+    args, "POST")
+}
+
+#' Create a Canvas quiz
+#'
+#' An open-ended function with (extremely) few assumptions about the settings
+#' the quiz should have. If you want an easier way to batch-create multiple
+#' quizzes that DOES make (quite a few) more assumptions, see
+#' [cnvs::create_quizzes()].
+#'
+#' The only essential information to provide is the quiz title, but I do
+#' recommend providing more than this, unless you're quite happy with the
+#' defaults (unlikely)!
+#'
+#' @param module_id Canvas module ID number
+#' @param title Title of the quiz.
+#' @param ... Any number of additional arguments. These MUST correspond to valid
+#' parameter names for an API request, as they will be automatically interpreted
+#' as such. For instance, to set the parameter `quiz[quiz_type]`, provide the
+#' argument `quiz_type = "assignment"` (or whichever allowed value you want.)
+#' For a complete list of parameters and allowed values, see [the Quizzes API]
+#' (https://developerdocs.instructure.com/services/canvas/resources/quizzes#method.quizzes/quizzes_api.create).
+#'
+#'
+#' @returns Response from Canvas
+#' @export
+
+
+create_quiz <- function(module_id, title,  ...){
+  args <- tibble::tibble(title = title, ...)
+  args <- cnvs::make_args(args, type = "quiz")
+
+  args <- append(list(access_token = rcanvas:::check_token()), args)
+
   quiz <- rcanvas:::canvas_query(
     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes"),
     args, "POST")
@@ -346,8 +390,9 @@ create_quizzes <- function(week, quiz_name, unlock, lock, module_id, quiz_desc,
 #'
 #' @returns Response from Canvas.
 #' @export
+#'
 
-update_quizzes <- function(module_code, module_id,
+update_quiz <- function(module_code, module_id,
                            search_term, quiz_id,
                            task = c("release_answers", "publish", "change_code", "update_description", "other"),
                            description,
@@ -357,7 +402,7 @@ update_quizzes <- function(module_code, module_id,
     stop("You must provide either module_code or module_id")
   }
 
-  if(!missing(module_code)){
+  if(missing(module_id) & !missing(module_code)){
     if (!stringr::str_detect(module_code, "^[A-Z]?[0-9]+[A-Z]?[0-9]+"))
       stop("Module code is not specified correctly. Please enter a module code formatted as C1234 or 123C4.")
 
@@ -373,11 +418,11 @@ update_quizzes <- function(module_code, module_id,
     stop("You must provide either search_term or quiz_id")
   }
 
-  if(!missing(search_term)){
+  if(missing(quiz_id) & !missing(search_term)){
     quizzes <- quizzes <- cnvs::get_all_quizzes(module_id)
     quiz_id <- quizzes |>
       dplyr::filter(grepl(search_term, title)) |>
-      dplyr::pull(quiz_id)
+      dplyr::pull(id)
   }
 
   if(task == "update_description" & missing(description)){
@@ -411,21 +456,24 @@ update_quizzes <- function(module_code, module_id,
 
 #' Convert a tibble to Canvas query arguments
 #'
-#' This function is specifically designed to convert a tibble formatted like,
-#' and containing, information for creating quiz questions, into a list of
-#' arguments that can be passed onto a POST query to create those questions
-#' see [cnvs::create_quiz_questions].
-#'
+#' This function converts a tibble of API parameters into a formatted args list
+#' to pass on to an API query. The variable names MUST match allowable
+#' parameters for the relevant query scope, and the values MUST match allowable
+#' values (which I imagine is unsurprising).
 #'
 #' @param data A tibble with variable names
+#' @param type What type of arguments to generate. This string will be pasted
+#' to the beginning of each argument name (except in the case of variable names
+#' beginning with the string "answers"). For example, use "quiz" for use with
+#' [cnvs::create_quiz()] and "question" for [cnvs::create_quiz_question()].
 #'
 #' @returns A list of arguments, one for each quiz question to be created.
 
-make_question_args <- function(data){
+make_args <- function(data, type){
   ## Unlisted tibble
-  question_list <- data |> unlist()
+  data_list <- data |> unlist()
   ## Unlisted names only
-  arg_names <- names(question_list)
+  arg_names <- names(data_list)
 
   #### Deal with [answers] ####
   ## Find the names that contain "answers" (all of the ones from inside the nested tibble)
@@ -446,12 +494,12 @@ make_question_args <- function(data){
 
   #### Reformat and Output ####
   ## non-answer question names
-  arg_names[!grepl("answer", arg_names)] <- paste0("question[", arg_names[!grepl("answer", arg_names)], "]")
+  arg_names[!grepl("answer", arg_names)] <- paste0(type, "[", arg_names[!grepl("answer", arg_names)], "]")
 
   ## Assign names to values
-  names(question_list) <- arg_names
+  names(data_list) <- arg_names
 
-  return(question_list)
+  return(data_list)
 }
 
 
@@ -476,7 +524,7 @@ create_quiz_questions <- function(quiz_id, data){
     dplyr::rowwise() |>
     dplyr::group_split()
 
-  data_args <- purrr::map(split_data, make_question_args)
+  data_args <- purrr::map(split_data, ~cnvs::make_args(data = .x, type = "question"))
 
   purrr::map2(
     quiz_id, data_args,

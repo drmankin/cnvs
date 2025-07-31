@@ -54,10 +54,19 @@ To obtain the Canvas domain:
 
 ### Storing .Renviron values
 
-<!-- This package includes an interactive function to edit the .Renviron file with the correct variable names. After package installation, when you have both your Canvas token and domain to hand, run the following in the Console: -->
-<!-- ```{r, eval=FALSE} -->
-<!-- cnvs::set_renv_variables() -->
-<!-- ``` -->
+#### Via Function
+
+This package includes an interactive function to edit the .Renviron file with the correct variable names. 
+After package installation, when you have both your Canvas token and domain to hand, run the following in the Console:
+
+```r
+cnvs::set_renv_variables()
+```
+
+This will initiate an interactive dialogue in the Console that will write your .Renviron file with the correct variable names.
+Do note that THIS WILL EDIT YOUR RENVIRON FILE so if you're not okay with that, you can also do it manually (below).
+
+#### Manually
 
 To create the variables manually, open your .Renviron file, for example
 using the `usethis` package:
