@@ -65,6 +65,7 @@ get_users <- function(module_id){
   return(tibble::as_tibble(dat))
 }
 
+
 #' Get information about all students on a module
 #'
 #' @param module_id A Canvas module ID number (NOT university module code).
@@ -90,7 +91,6 @@ get_students <- function(module_id, cand_no_pattern = "[0-9]{6}"){
 #     purrr::map(httr::content, "text") |>
 #     purrr::map(jsonlite::fromJSON, flatten = TRUE) |>
 #     dplyr::bind_rows()
-
 
   students <- students[!duplicated(students), ] |>
     dplyr::mutate(cand_no = gsub("Candidate No : ", "", sortable_name))
