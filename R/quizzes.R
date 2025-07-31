@@ -409,7 +409,104 @@ update_quizzes <- function(module_code, module_id,
     args, "PUT")
 }
 
+#' Convert a tibble to Canvas query arguments
+#'
+#' This function is specifically designed to convert a tibble formatted like,
+#' and containing, information for creating quiz questions, into a list of
+#' arguments that can be passed onto a POST query to create those questions
+#' see [cnvs::create_quiz_questions].
+#'
+#'
+#' @param data A tibble with variable names
+#'
+#' @returns A list of arguments, one for each quiz question to be created.
 
+make_question_args <- function(data){
+  ## Unlisted tibble
+  question_list <- data |> unlist()
+  ## Unlisted names only
+  arg_names <- names(question_list)
+
+  #### Deal with [answers] ####
+  ## Find the names that contain "answers" (all of the ones from inside the nested tibble)
+  answers_names <- arg_names[grepl("answer", arg_names)]
+
+  ## Extract the numerical indices at the end and subtract one to start numbering from 0
+  answers_indices <- gsub(".*(\\d+)", "\\1", answers_names) |>
+    as.numeric() - 1
+
+  ## Drop the numerical indices from the answer names
+  answers_names <- gsub("(.*)\\d+", "\\1", arg_names[grepl("answer", arg_names)])
+
+  ## Paste back together with the 0-start indices instead
+  answers_names_numb <- paste0(answers_names, answers_indices)
+
+  ## Reformat names and rename in argument names
+  arg_names[grepl("answer", arg_names)] <- gsub("(.+?)\\.(.+?)(\\d+)", "question\\[\\1\\]\\[\\3\\]\\[\\2\\]", answers_names_numb)
+
+  #### Reformat and Output ####
+  ## non-answer question names
+  arg_names[!grepl("answer", arg_names)] <- paste0("question[", arg_names[!grepl("answer", arg_names)], "]")
+
+  ## Assign names to values
+  names(question_list) <- arg_names
+
+  return(question_list)
+}
+
+
+#' Post quiz questions to a Canvas quiz
+#'
+#' In order to create a question successfully, the variable names in `data`
+#' MUST match the corresponding fields for the QuizQuestion and Answer
+#' objects [see Canvas API help documentation for options](https://developerdocs.instructure.com/services/canvas/resources/quiz_questions).
+#' Furthermore, the answer information must be held in its own tibble, nested
+#' in the question data tibble, in a variable called `answers`. For a template,
+#' use [cnvs::quiz_question_example].
+#'
+#' @param quiz_id Numerical Canvas ID number for the quiz to which the questions will be added.
+#' @param data A tibble of quiz information with answer information nested by
+#' row; for a template, use [cnvs::quiz_question_example].
+#'
+#' @returns Response from Canvas
+#' @export
+
+create_quiz_questions <- function(quiz_id, data){
+  split_data <- data |>
+    dplyr::rowwise() |>
+    dplyr::group_split()
+
+  data_args <- purrr::map(split_data, make_question_args)
+
+  purrr::map2(
+    quiz_id, data_args,
+    \(.x, .y) {
+      args <- append(list(access_token = rcanvas:::check_token()), .y)
+      quiz <- rcanvas:::canvas_query(
+        paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes/", .x, "/questions"),
+        args, "POST")
+    }
+  )
+}
+
+#' Get a Canvas quiz ID for an existing quiz
+#'
+#' Note that this function will happily return more than one quiz ID, so if you
+#' don't want that, do check your search term!
+#'
+#' @param module_id Canvas module ID number to search in (see [cnvs::get_module_id()])
+#' @param search_term String or regex to search the quiz names
+#'
+#' @returns A vector of quiz IDs for all quizzes matching the search term
+#' @export
+
+get_quiz_id <- function(module_id, search_term){
+  all_quizzes <- cnvs::get_quiz_info(module_id)
+
+  all_quizzes |>
+    dplyr::filter(grepl(search_term, name)) |>
+    dplyr::pull(id)
+}
 
 #' #' Create information about quiz groups
 #' #'
