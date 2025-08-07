@@ -86,7 +86,7 @@ To see your shiny new quiz, navigate to your Canvas site > your module (i.e. the
 If all's gone well, you should see an unpublished quiz called "This is a test!" (or whatever you called it).
 
 If you click on this quiz, you'll see that in the absence of further info, Canvas has made quite a few assumptions about what this quiz should look like.
-For instance, it's not put a time limit, has let students view results immediately, etc.; and there's no description, etc.
+For instance, it's not put a time limit, has let students view results immediately, provided no description, etc.
 So, let's update the quiz to the settings we want.
 
 ### Updating a Quiz
@@ -98,9 +98,10 @@ Instead, we'll need to use `cnvs::update_quiz()`.
 We don't have the `quiz_id` at the moment, because Canvas generated it randomly when it `POST`ed the quiz.
 We could look it up in the URL: `https://canvas.youruni.ac.uk/courses/module_id/quizzes/THIS_NUMBER` or, more sensibly, we could use the `cnvs::get_quiz_id()` function to find and store that number.
 However, if we just want to make a quick change to the quiz, the `update_quiz()` function will use either a `quiz_id` or a `search_term` to find the relevant quiz.
+(Isn't that clever? I know! You're welcome.)
 Here, we can provide `search_term` - either a simple string or regex - to identify the quiz by title.
 
-To make things easy, the function also is designed to be used for a single update task at a time.
+To make things easy, the function  is designed to be used for a single update task at a time.
 You could short-circut this by using the `"other"` task type and `other_args` argument to change multiple things at once.
 For now, though, let's just add a description.
 
@@ -116,7 +117,7 @@ cnvs::update_quizzes(
 Refresh your quiz and check the description box - you should find your shiny new description there.
 
 This function assumes that you've been sensible and added most of the settings for your quiz when you created it, so you'd mainly use the update function to change things that you would need to change later anyway (like publishing it or changing the access code).
-So, when developing your workflow, consider deciding what quiz settings you want ahead of time, and implementing them at the create stage wherever possible!
+So, when developing your workflow, decide what quiz settings you want ahead of time, and implement them at the create stage wherever possible!
 
 ## Creating Multiple Quizzes
 
@@ -136,7 +137,7 @@ description <- cnvs::create_quiz_desc()
 
 The output will contain two elements, `$practice` and `$marked`.
 To be honest, this function is for me, so I've hard-coded it with my own quiz rules.
-If you need something different, you can always generate another `description` object yourself; it just needs to contain two elements with the same names (`$practice` and `$marked`).
+If you need something different, you can always generate another `description` object yourself; it just needs to contain two text elements with the same names (`$practice` and `$marked`).
 
 We also have "ChallengRs", which are optional extra tasks that are a bit harder, but definitely achievable, for each week.
 This function also generates ChallengR descriptions by changing the default:
@@ -152,7 +153,9 @@ As before, you can either give it the module code, or Canvas module ID; personal
 If you created and stored a different description above, you can input it here.
 However, if you leave it blank, it will just run `cnvs::create_quiz_desc()` with the defaults, so you can skip the step above if you're happy with that!
 
-From there, we're providing information about ea
+From there, we're providing information about the batch of quizzes we want to create.
+The number of quizzes to create is calculated by the difference between `first_unlock_date` and `last_lock_date`, so you can use this function to create as many or as few quizzes as you like, but it will create only one per week.
+It also allows removing/skipping weeks via the `break_weeks` argument (as Sussex has fluctuating spring holidays in our second term).
 
 ```r
 quiz_info <- cnvs::create_quiz_info(
@@ -168,3 +171,13 @@ quiz_info <- cnvs::create_quiz_info(
   break_weeks = 9:11
 )
 ```
+
+The resulting `quiz_info` object contains the settings and info to construct the Canvas queries to create these quizzes.
+If there's anything you want to do differently - adding or dropping weeks, changing titles or descriptions, or whatever - you can edit this tibble directly before going on to the next step.
+DON'T change or add variables, though, unless they correspond to allowable API query parameters, because the `POST` function won't be able to process them.
+
+### Create Quizzes
+
+REVISE TO SPLIT > ... FORMAT
+
+Actually, fix `create_quiz()` so it works with`quiz_info` - already part of the way there, just need to sort out the break weeks and input type

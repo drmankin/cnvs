@@ -80,6 +80,7 @@ create_quiz_desc <- function(n_questions = 5, standard_time_limit = 12, challeng
 #'   term should lock.
 #' @param lock_time Hours as a number past midnight when the quizzes should lock
 #'   each week. E.g. for 6pm, enter `18`.
+#' @param starting_week Which week of term do quizzes start in?
 #' @param mopup_day Optional. If mop-up quizzes are allowed, what day should the
 #'  quiz close on? Lock time will be set to to 23:59:59 on that day.
 #' @param quiz_type Either one of "assignment", "practice_quiz",
@@ -119,7 +120,7 @@ create_quiz_desc <- function(n_questions = 5, standard_time_limit = 12, challeng
 create_quiz_info <- function(module_code, module_id, description = NULL,
                              first_unlock_date, unlock_time,
                              last_lock_date, lock_time,
-                             mopup_day,
+                             starting_week = 1, mopup_day,
                              quiz_type = c("assignment", "practice_quiz", "graded_survey", "survey"),
                              make_practice = 1,
                              title_fn = function(x) paste("Week", x, "Worksheet", collapse = " "),
@@ -190,14 +191,14 @@ create_quiz_info <- function(module_code, module_id, description = NULL,
 
   if(!missing(mopup_day)){
 
-    weekdays <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
-    this_weekday <- which(weekdays == mopup_day)
+    # weekdays <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+    # this_weekday <- which(weekdays == mopup_day)
 
     ## THIS IS THROWING AN ERROR BUT MY HEAD HURTS. FIX IT
     quiz_times <- quiz_times |>
       dplyr::mutate(
         lock_at = dplyr::case_when(
-          week != max(week) ~ (cnvs::find_weekday(date = as.Date(unlock_at), weekday = this_weekday, direction = "next")
+          week != max(week) ~ (cnvs::find_weekday(date = as.Date(unlock_at), weekday = mopup_day, direction = "next")
                       + lubridate::hours(23) + lubridate::minutes(59) + lubridate::seconds(59)),
           week == max(week) ~ lock_at
       )
@@ -213,11 +214,12 @@ create_quiz_info <- function(module_code, module_id, description = NULL,
         ~ lubridate::format_ISO8601(lubridate::as_datetime(.x), usetz = FALSE, precision = "ymdhms"))
     )
 
+  ### FIGURE OUT THIS BREAK WEEK AND STARTING WEEK STUFF
   # Remove break weeks (if there are any)
   if (has_break_weeks){
     quiz_times <- quiz_times |>
-      dplyr::filter(!week %in% break_weeks) |>
-      dplyr::mutate(week = 1:length(module_id))
+      dplyr::filter(!week %in% c(break_weeks)) |>
+      dplyr::mutate(week = starting_week:dplyr::n())
   }
 
   # Set the quiz types, names, and access code
@@ -237,19 +239,28 @@ create_quiz_info <- function(module_code, module_id, description = NULL,
       dplyr::mutate(
         description = description
       )
-  } else (
+  } else {
     quiz_times <- quiz_times |>
       dplyr::mutate(
         description = description$marked
       )
-  )
+  }
 
   # Make changes to any weeks that should be practice weeks
   quiz_times$quiz_type[make_practice] <- "practice_quiz"
   quiz_times$title[make_practice] <- gsub("(.*)", "\\1 (Practice)", quiz_times$title[make_practice])
-  quiz_times$description[make_practice] <- description$practice
+  quiz_times$description[make_practice] <- ifelse(length(description) > 1, description$practice, description)
   quiz_times$allowed_attempts[make_practice] <- -1
   quiz_times$access_code[make_practice] <- FALSE
+
+  quiz_times <- quiz_times |>
+    dplyr::mutate(
+      access_code = dplyr::case_when(
+        access_code == TRUE ~ paste(sample(0:9, 6, replace = TRUE), collapse = ""),
+        .default = NULL
+      ),
+      time_limit = dplyr::case_when(!is.na(time_limit) ~ time_limit, .default = NULL)
+    )
 
   if(challengr == TRUE){
     quiz_times <- quiz_times |>
@@ -364,7 +375,7 @@ create_quiz <- function(module_id, title,  ...){
   args <- append(list(access_token = rcanvas:::check_token()), args)
 
   quiz <- rcanvas:::canvas_query(
-    paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes"),
+    paste0(Sys.getenv("CANVAS_DOMAIN"), "/api/v1/courses/", module_id, "/quizzes"),
     args, "POST")
 }
 
@@ -450,7 +461,7 @@ update_quiz <- function(module_code, module_id,
             args)
 
   rcanvas:::canvas_query(
-    paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes/", quiz_id),
+    paste0(Sys.getenv("CANVAS_DOMAIN"), "/api/v1/courses/", module_id, "/quizzes/", quiz_id),
     args, "PUT")
 }
 
@@ -512,6 +523,7 @@ make_args <- function(data, type){
 #' in the question data tibble, in a variable called `answers`. For a template,
 #' use [cnvs::quiz_question_example].
 #'
+#' @param module_id Canvas module ID number
 #' @param quiz_id Numerical Canvas ID number for the quiz to which the questions will be added.
 #' @param data A tibble of quiz information with answer information nested by
 #' row; for a template, use [cnvs::quiz_question_example].
@@ -519,19 +531,26 @@ make_args <- function(data, type){
 #' @returns Response from Canvas
 #' @export
 
-create_quiz_questions <- function(quiz_id, data){
+create_quiz_questions <- function(module_id, quiz_id, data){
+  ## Split data by row into a list
   split_data <- data |>
     dplyr::rowwise() |>
     dplyr::group_split()
 
+  ## Drop columns with NA (to prevent extraneous arguments)
+  split_data <- split_data |>
+    purrr::map(~dplyr::select(.x, where(~all(!is.na(.x)))))
+
+  ## Convert tibble to argument list
   data_args <- purrr::map(split_data, ~cnvs::make_args(data = .x, type = "question"))
 
+  ## Post
   purrr::map2(
     quiz_id, data_args,
     \(.x, .y) {
       args <- append(list(access_token = rcanvas:::check_token()), .y)
       quiz <- rcanvas:::canvas_query(
-        paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes/", .x, "/questions"),
+        paste0(Sys.getenv("CANVAS_DOMAIN"), "/api/v1/courses/", module_id, "/quizzes/", .x, "/questions"),
         args, "POST")
     }
   )
@@ -555,6 +574,8 @@ get_quiz_id <- function(module_id, search_term){
     dplyr::filter(grepl(search_term, name)) |>
     dplyr::pull(id)
 }
+
+
 
 #' #' Create information about quiz groups
 #' #'
@@ -583,20 +604,124 @@ get_quiz_id <- function(module_id, search_term){
 #'     module_id = module_id
 #'   )
 #'
-#' #' Create quiz groups
-#'
-#' create_quiz_groups <- function(module_id, quiz_id, group_name, pick_count, points){
-#'
-#'   args <- list(
-#'     access_token = rcanvas:::check_token(),
-#'     `quiz_groups[][name]` = group_name,
-#'     `quiz_groups[][pick_count]` = pick_count,
-#'     `quiz_groups[][question_points]` = points
-#'   )
-#'   quiz <- rcanvas:::canvas_query(
-#'     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes/", quiz_id, "/groups"),
-#'     args, "POST")
-#' }
-#'
-#' purrr::pmap(groups_info, create_quiz_groups)
 
+# purrr::pmap(groups_info, create_quiz_groups)
+
+#' Create groups in a quiz
+#'
+#' Generate question groups in an existing quiz. There are only four valid
+#' parameters that can be provided:
+#'
+#' - `name`: the name of the group
+#' - `pick_count`: how many questions should be randomly selected from the group
+#' - `question_points`: how many points each question is worth
+#' - `assessment_question_bank_id`: ID number of the assessment question bank to
+#' link to. Unclear at the moment if/how this ID number can be accessed via the
+#' API; otherwise, find it here:
+#' https://canvas.your_uni.ac.uk/courses/module_id/question_banks/THIS_NUMBER
+#'
+#' Parameters can be provided as either a tibble (for multiple groups at once)
+#' or as named arguments. Either method will accept any combination of
+#' parameters, and the argument method will accept none.
+#'
+#' @param module_id Canvas module ID
+#' @param quiz_id Canvas quiz ID
+#' @param args_data Tibble of arguments, with variable names the same as the
+#' parameter options (listed above) and values for each group in each row
+#' @param ... Parameter options (listed above) given as named arguments, e.g.
+#' `name = "Hard Questions"`.
+#'
+#' @returns Response from Canvas
+#' @export
+
+create_quiz_groups <- function(module_id, quiz_id, args_data, ...){
+
+  ## Use tibble if provided, otherwise use any named arguments
+  if(missing(args_data)){
+    data <- tibble::tibble(...)
+  } else {
+    data <- args_data
+  }
+
+  ## Split data by row into a list
+  split_data <- data |>
+    dplyr::rowwise() |>
+    dplyr::group_split()
+
+  ## Drop columns with NA (to prevent extraneous arguments)
+  split_data <- split_data |>
+    purrr::map(~dplyr::select(.x, where(~all(!is.na(.x)))))
+
+  ## Convert data to arguments
+  args <- purrr::map(split_data, ~cnvs::make_args(data = .x, type = "quiz_groups[]"))
+
+  ## Post
+  purrr::map2(
+    quiz_id, args,
+    \(.x, .y) {
+      args <- append(list(access_token = rcanvas:::check_token()), .y)
+      quiz <- rcanvas:::canvas_query(
+        paste0(Sys.getenv("CANVAS_DOMAIN"), "/api/v1/courses/", module_id, "/quizzes/", .x, "/groups"),
+        args, "POST")
+    }
+  )
+}
+
+#' Get information about quiz groups
+#'
+#' For a quiz with existing quiz groups, retrieve the info/settings about these
+#' groups. Accepts one or multiple quiz group IDs but will ignore duplicate IDs.
+#'
+#' @param module_id Canvas module ID
+#' @param quiz_id Canvas quiz ID with existing quiz groups
+#' @param quiz_group_id Canvas quiz IDs of existing quiz groups
+#'
+#' @returns Tibble of quiz groups information
+#' @export
+
+get_quiz_groups <- function(module_id, quiz_id, quiz_group_id){
+  quiz_group_id <- unique(quiz_group_id)
+
+  url <- paste0(Sys.getenv("CANVAS_DOMAIN"), "/api/v1/courses/", module_id, "/quizzes/", quiz_id, "/groups/", quiz_group_id)
+  args <- list(access_token = rcanvas:::check_token(), per_page = 100)
+
+  purrr::map(
+    url,
+    ~rcanvas:::process_response(.x, args)
+  )  |>
+    purrr::reduce(
+      dplyr::bind_rows
+    ) |>
+    dplyr::mutate(module_id = module_id)
+
+}
+
+#' Add info about quiz groups to question info
+#'
+#' Given a tibble of question info, will retrieve the information about quiz
+#' group info for each question and merge into the table. Great for creating
+#' question banks!
+#'
+#' @param module_id Canvas module ID number
+#' @param quizzes_info A tibble of quiz question info minimally containing
+#' variables `quiz_id` and `quiz_group_id`.
+#'
+#' @returns The same `quizzes_info` tibble but with added details about the quiz
+#' group each question belongs to - see [cnvs::get_quiz_groups()]
+#' @export
+
+add_quiz_groups_info <- function(module_id, quizzes_info){
+  quizzes_info |>
+    dplyr::select(quiz_id, quiz_group_id) |>
+    dplyr::filter(!is.na(quiz_group_id)) |>
+    dplyr::distinct() |>
+    purrr::pmap(
+      .l = _,
+      .f = ~cnvs::get_quiz_groups(module_id, ..1, ..2)
+    ) |>
+    purrr::reduce(
+      dplyr::bind_rows
+    ) |>
+    dplyr::rename(quiz_group_id = id) |>
+    dplyr::right_join(quizzes_info, by = join_by(quiz_id, quiz_group_id))
+}

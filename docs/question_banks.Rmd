@@ -1,0 +1,108 @@
+# Question Banks
+
+Here's the good AND bad news (it's the same news): the Canvas API currently has no method of interacting with question banks. 
+Yikes, and also yay! 
+Of course that means we're going to do it ourselves.
+
+## A Side Note About Question Banks
+
+Question banks in Canvas are of *questionable* use. 
+The main benefit of question banks - namely, instead of adding questions to a quiz manually, or even in batches, you can link a question group directly to a question bank - is one I *don't* ever use.
+Why? Well, primarily because if you the question-writer fucked up at any point, you cannot automatically remark *any* questions from a linked bank.
+If the questions are actually added into the quiz, you can automatically remark some question types (not all though).
+Since I've been writing and rewriting quiz questions for years, I never want to take the chance I'll have to manually remark a question for 500 students.
+
+But, the *idea* of question banks is great, and I keep my questions organised in banks to easily allow me to add them to quizzes.
+The major downside of this - well, there are a couple. 
+Questions are "siloed" in banks, so it's quite difficult to spot duplicate questions.
+This also means that if there is an error in a quiz, you have to update the question *twice*: once in the quiz, and once in the bank (which won't propagate automatically).
+
+## The Plan
+
+Let's solve all these problems by locally storing our own questions banks.
+I'm going to do this with the following steps:
+
+1. Download the existing quiz questions and answers from last year's quizzes, which will become my question banks.
+1. Add useful coding (such as week of term, and type of question)
+1. Save in a place my colleagues and I can easily edit
+1. Build some code to automatically generate each week's quiz using those questions
+
+This might not be a right-now thing, but at some point I'd like to build a system where I can write questions using code chunks and inline code, which then get sent to Canvas as questions.
+(I know this is possible because an extremely talented former colleague did it years ago - I'm just catching up!)
+
+**NOTE**: Unfortunately, at the time of this writing there is no API endpoint to access or create question banks on Canvas directly.
+So, we'll be managing them as datasets saved locally (or on the sharing service of your choice), but we won't be able to put them onto Canvas, until Canvas adds to its API.
+
+## Creating a Bank
+
+### Setup
+
+To begin, as usual, we need to get things set up. This includes our libraries, running the `cnvs::canvas_setup()` function to get our connection to the API in place, and storing the ID code of the module want to work with.
+
+```{r}
+library(cnvs)
+library(tidyverse)
+
+cnvs::canvas_setup()
+module_id <- cnvs::get_module_id("ABC123")
+```
+
+### Get Quizzes
+
+Next, we'll retrieve a list of all of the quizzes on that module, which we store in the `all_quizzes` object.
+
+From here, you can have a look at the quizzes you have and decide which one(s) you want to make a question bank with. Then, filter this dataset accordingly. For me, I'll go for any quizzes that have "Worksheet" in their title, to make a bank of all of my weekly worksheet quiz questions. The last step just pulls out the Canvas ID numbers for these particular quizzes.
+
+```{r}
+## Get relevant quizzes
+all_quizzes <- cnvs::get_all_quizzes(module_id)
+
+## Create a vector of quiz IDs for only the quizzes with "Worksheet" in the title
+these_quizzes <- all_quizzes |>
+  dplyr::filter(grepl("Worksheet", title)) |>
+  dplyr::pull(id)
+```
+
+### Get Questions
+
+Now that I have the ID numbers of the quizzes, I can query canvas to give me the quiz questions in each quiz, which comes back as a list of tibbles, one for each quiz. In my specific example, I had to fix an issue where the `answer_tolerance` variable had different data types in different quiz tibbles, so I've solved that by forcing all of the `answer_tolerance` variables in all of the tibbles to be numeric. That was my only data type mismatch, so finally I bind all the rows together into a single dataset - here's my question bank!
+
+```{r}
+## Create list of datasets of all questions and answers
+these_questions <- these_quizzes |>
+  purrr::map(~cnvs::get_quiz_questions(module_id = module_id, quiz_id = .x))
+
+## Fixing a data type mismatch
+these_questions <- these_questions |>
+  purrr::map(
+    ~dplyr::mutate(.x, answer_tolerance = as.numeric(answer_tolerance))
+  )
+
+## Combine into a single dataset
+question_bank <- these_questions |>
+  purrr::reduce(dplyr::bind_rows)
+```
+
+That's it! I now have a single dataset of all my quiz questions and answer information for every quiz that I wanted.
+
+### Refining the Bank
+
+I could stop here, but there are a couple more steps to make this bank a bit easier to use.
+
+One thing I can do is join in the titles of the quizzes, so I know which question came from which quiz.
+
+```{r}
+question_bank <- all_quizzes |>
+  dplyr::filter(id %in% these_quizzes) |>
+  dplyr::select(quiz_id = id, title) |>
+  dplyr::right_join(question_bank)
+```
+
+I also frequently use question groups to randomly present small subsets of questions to different students. Since I might want to use that structure in the future, I need to know which questions are in which groups. Lucky for me, I name my question groups with religious consistency, *and* I've written a nice convenience function to merge in the quiz groups information!
+
+```{r}
+question_bank <- cnvs::add_quiz_groups_info(module_id, question_bank)
+```
+
+If you want slightly different information or in a different format, you can do this a bit more manually using the `cnvs::get_quiz_groups()` function to get quiz groups info for specific group(s) separately. This function is called inside `add_quiz_groups_info()` anyway, but the latter makes (quite a few) assumptions about both the input and desired output.
+
