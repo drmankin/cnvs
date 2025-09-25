@@ -17,7 +17,7 @@ get_submissions(module_id, type, type_id, add_args = list())
 }
 \value{
 A tibble of submission information for all submissions for all
-  students.
+students.
 }
 \description{
 Get all submissions for a particular assignment

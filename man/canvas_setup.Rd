@@ -4,32 +4,18 @@
 \alias{canvas_setup}
 \title{Setup Canvas for API use}
 \usage{
-canvas_setup(domain = "https://canvas.sussex.ac.uk")
-}
-\arguments{
-\item{domain}{A text string URL of the homepage of your university's Canvas
-site. Default is for University of Sussex.}
+canvas_setup()
 }
 \value{
 Sets the Canvas token and domain.
 }
 \description{
-Wrapper for two `rcanvas` functions: [rcanvas::set_canvas_token()] and
-[rcanvas::set_canvas_domain()]. Calls [Sys.getenv()] for setting the token,
+Wrapper for two \code{rcanvas} functions: \code{\link[rcanvas:apihelpers]{rcanvas::set_canvas_token()}} and
+\code{\link[rcanvas:apihelpers]{rcanvas::set_canvas_domain()}}. Calls \code{\link[=Sys.getenv]{Sys.getenv()}} for both,
 so this must be set up ahead of time (see Details).
 }
 \details{
-To use this function, you must obtain a Canvas token and set it as an
-environmental variable.
-
-To obtain a Canvas token:
-  * Log into Canvas.
-  * On the left bar, click Account, then Settings.
-  * Click New Access Token and follow the instructions.
-
-Save your Canvas token somewhere safe, where you can find it again. Then,
-open your Renviron file (by using e.g. [usethis::edit_r_environ()]) and
-create a new variable called  called `CANVAS_TOKEN` with your Canvas token in
-quotes, making sure to keep the last line of the file empty. Save the file,
-close it, and restart R (Session > Restart R) for the changes to take effect.
+To use this function, you must have a Canvas access token stored in your
+Renviron file as \code{CANVAS_TOKEN}, and the domain URL for your institution
+stored as \code{CANVAS_DOMAIN}. See \code{\link[=set_renv_variables]{set_renv_variables()}} for more.
 }

@@ -11,7 +11,7 @@ create_quiz_desc(n_questions = 5, standard_time_limit = 12, challengr = FALSE)
 
 \item{standard_time_limit}{Time limit in minutes for the "standard" amount of
 time, i.e. before any extra time reasonable adjustments are implemented.
-The function will automatically calculate and add info about 25% and 50%
+The function will automatically calculate and add info about 25\% and 50\%
 extra time based on this number.}
 
 \item{challengr}{Are the quizzes being created ChallengRs?}

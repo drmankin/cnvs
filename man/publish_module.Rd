@@ -7,7 +7,7 @@
 publish_module(search_term)
 }
 \arguments{
-\item{search_term}{Passed to [get_module_id()] to return the module ID}
+\item{search_term}{Passed to \code{\link[=get_module_id]{get_module_id()}} to return the module ID}
 }
 \value{
 Reply from Canvas

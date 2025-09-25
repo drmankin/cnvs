@@ -4,10 +4,12 @@
 \alias{get_students}
 \title{Get information about all students on a module}
 \usage{
-get_students(module_id)
+get_students(module_id, cand_no_pattern = "[0-9]{6}")
 }
 \arguments{
 \item{module_id}{A Canvas module ID number (NOT university module code).}
+
+\item{cand_no_pattern}{Regex pattern to filter valid candidate numbers}
 }
 \value{
 A tibble of student information

@@ -8,7 +8,7 @@ quarto_annc(module_id, file_path, page_title, post_at = NULL)
 }
 \arguments{
 \item{module_id}{The Canvas ID of the module to update (use
-[cnvs::get_module_id()])}
+\code{\link[=get_module_id]{get_module_id()}})}
 
 \item{file_path}{Location of a .qmd Quarto file to post}
 

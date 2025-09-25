@@ -16,11 +16,11 @@ quarto_page(
 )
 }
 \arguments{
-\item{module_id}{The Canvas ID of the module to update (use [get_module_id()])}
+\item{module_id}{The Canvas ID of the module to update (use \code{\link[=get_module_id]{get_module_id()}})}
 
 \item{file_path}{Location of a .qmd Quarto file to post}
 
-\item{syllabus}{Boolean. Whether the page to be uploaded is the module syllabus (`TRUE`) or not (`FALSE`, default)}
+\item{syllabus}{Boolean. Whether the page to be uploaded is the module syllabus (\code{TRUE}) or not (\code{FALSE}, default)}
 
 \item{page_id}{ID or URL of an existing Canvas page. If left as "" (the default) will instead create a new page}
 

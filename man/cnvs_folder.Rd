@@ -12,7 +12,7 @@ cnvs_folder(local_path, search_term, module_list, set_wd = FALSE, template)
 \item{search_term}{String to search for on Canvas.}
 
 \item{module_list}{Provide an object containing an existing module list from
-[get_module_list()]. If none provided, runs [get_module_list()].}
+\code{\link[=get_module_list]{get_module_list()}}. If none provided, runs \code{\link[=get_module_list]{get_module_list()}}.}
 
 \item{set_wd}{Boolean. Whether the new file path should be set as the working
 directory.}
@@ -22,11 +22,11 @@ Will be copied into the new file folder as a new document called
 "template.qmd".}
 }
 \value{
-A new file folder as a subfolder of `local_path`, named "module_id
-  Full Name Of Canvas Module", and the module path as a string
+A new file folder as a subfolder of \code{local_path}, named "module_id
+Full Name Of Canvas Module", and the module path as a string
 }
 \description{
 Create a folder to organise Quarto documents that can be turned into Canvas
-pages using [quarto_page()], or quickly set the correct folder as the working
+pages using \code{\link[=quarto_page]{quarto_page()}}, or quickly set the correct folder as the working
 directory.
 }

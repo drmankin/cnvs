@@ -12,7 +12,7 @@ title to search for, OR a module code (not both!)}
 
 \item{academic_year}{A string containing the academic year for the desired
 module as e.g. "22/23"; defaults to the current year as calculated by
-[cnvs::get_ac_year()]. Does not need to be specified for ongoing/non-academic
+\code{\link[=get_ac_year]{get_ac_year()}}. Does not need to be specified for ongoing/non-academic
 modules}
 
 \item{quietly}{Should the message about academic year be suppressed?}

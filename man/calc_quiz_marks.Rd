@@ -17,14 +17,14 @@ calc_quiz_marks(
 
 \item{academic_year}{A string containing the academic year for the desired
 module as e.g. "22/23"; defaults to the current year as calculated by
-[cnvs::get_ac_year()]. Does not need to be specified for
+\code{\link[=get_ac_year]{get_ac_year()}}. Does not need to be specified for
 ongoing/non-academic modules}
 
 \item{quiz_title}{Common element of the names of all quizzes to be included.
-Defaults to "Worksheet". Passed to [cnvs::get_quiz_marks()].}
+Defaults to "Worksheet". Passed to \code{\link[=get_quiz_marks]{get_quiz_marks()}}.}
 
-\item{quiz_data}{A long-form dataset of quiz scores, including `cand_no`
-(candidate number), `week` (week of term), and `score` (quiz score). Use
+\item{quiz_data}{A long-form dataset of quiz scores, including \code{cand_no}
+(candidate number), \code{week} (week of term), and \code{score} (quiz score). Use
 this option if you have previously needed to download the quiz data and
 make manual changes before calculating the quiz mark. If this argument is
 empty, the function will instead download the quiz marks directly from
@@ -34,7 +34,7 @@ Canvas using the information in the following arguments.}
 }
 \value{
 A list with three elements: $all_marks, a tibble of all quiz scores for all
-  students; $mean_marks, a tibble of final quiz mark for all students; and $dist, a histogram of the distribution of those final marks
+students; $mean_marks, a tibble of final quiz mark for all students; and $dist, a histogram of the distribution of those final marks
 }
 \description{
 Calculate "best-of" worksheet marks

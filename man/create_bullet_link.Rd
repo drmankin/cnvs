@@ -7,10 +7,10 @@
 create_bullet_link(...)
 }
 \arguments{
-\item{...}{Arguments passed to [cnvs::create_link()]}
+\item{...}{Arguments passed to \code{\link[=create_link]{create_link()}}}
 }
 \value{
-A single text string in the format "- `linked text`" with two following newlines
+A single text string in the format "- \verb{linked text}" with two following newlines
 }
 \description{
 Generate a linked bullet point

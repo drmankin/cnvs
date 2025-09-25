@@ -6,15 +6,17 @@
 \usage{
 create_quiz_info(
   module_code,
-  quiz_desc = NULL,
+  module_id,
+  description = NULL,
   first_unlock_date,
   unlock_time,
   last_lock_date,
   lock_time,
+  starting_week = 1,
   mopup_day,
   quiz_type = c("assignment", "practice_quiz", "graded_survey", "survey"),
   make_practice = 1,
-  quiz_name_fn = function(x) paste("Week", x, "Worksheet", collapse = " "),
+  title_fn = function(x) paste("Week", x, "Worksheet", collapse = " "),
   n_questions = 5,
   standard_time_limit = 12,
   has_break_weeks = TRUE,
@@ -23,56 +25,59 @@ create_quiz_info(
 )
 }
 \arguments{
-\item{module_code}{string containing the module code in the format "123C4"
-or "C1234".}
+\item{module_code}{A string containing the module code in the format "123C4"
+or "C1234". Either module_code or module_id must be provided.}
 
-\item{quiz_desc}{Quiz description as a string, which can include basic HTML
-formatting tags. If `NULL` (the default), runs
-[cnvs::create_quiz_desc()] with default settings. Also accepts
+\item{module_id}{Canvas module ID number. Either module_code or module_id must be provided.}
+
+\item{description}{Quiz description as a string, which can include basic HTML
+formatting tags. If \code{NULL} (the default), runs
+\code{\link[=create_quiz_desc]{create_quiz_desc()}} with default settings. Also accepts
 either a single string (which will be applied to all quizzes) or a list of
-two descriptions, named `practice` and `marked`. The `practice` description
-will only be used if `first_quiz_practice` is `TRUE` and will be used for
-the first quiz only.}
+two descriptions, named \code{practice} and \code{marked}. The \code{practice} description
+will only be used for the week(s) indicated in \code{make_practice}.}
 
 \item{first_unlock_date}{Date as "YYYY/MM/DD" of the date that the first quiz
 of term should unlock.}
 
 \item{unlock_time}{Hours as a number past midnight when the quizzes should
-unlock each week. E.g. for 9am, enter `9`.}
+unlock each week. E.g. for 9am, enter \code{9}.}
 
 \item{last_lock_date}{Date as "YYYY/MM/DD" of the date that the last quiz of
 term should lock.}
 
 \item{lock_time}{Hours as a number past midnight when the quizzes should lock
-each week. E.g. for 6pm, enter `18`.}
+each week. E.g. for 6pm, enter \code{18}.}
 
-\item{mopup_day}{Optional. If mop-up quizzes are allowed, what day should the quiz close on? Lock time will default to 11:59 on that day.}
+\item{starting_week}{Which week of term do quizzes start in?}
+
+\item{mopup_day}{Optional. If mop-up quizzes are allowed, what day should the
+quiz close on? Lock time will be set to to 23:59:59 on that day.}
 
 \item{quiz_type}{Either one of "assignment", "practice_quiz",
 "graded_survey", or "survey" (which will be applied to all) or a vector of
 combinations of the same in the order in which they should be applied.}
 
 \item{make_practice}{Which quiz(zes) should be practice quizzes, rather than
-marked? Defaults to `1` but accepts a numeric vector corresponding to week
-numbers, or `NULL` if none should be changed. For those quizzes indicated,
+marked? Defaults to \code{1} but accepts a numeric vector corresponding to week
+numbers, or \code{NULL} if none should be changed. For those quizzes indicated,
 the following will be changed:
-  * `quiz_type` will be set to "practice_quiz"
-  * `quiz_name` will be updated so the word "(Practice)" is at the end of
-  the title
-  * `quiz_desc` will be updated to the description stored in "$practice"
-  * `allowed_attempts` will be set to -1 (which will translate to
-  unlimited)
-  * `access_code` will be set to FALSE (which will be converted to NULL
-  when combined with [convenrhelpr::create_quizzes()])}
+* \code{quiz_type} will be set to "practice_quiz"
+* \code{title} will be updated so the word "(Practice)" is at the end of
+the title
+* \code{description} will be updated to the description stored in "$practice"
+* \code{allowed_attempts} will be set to -1 (which will translate to
+unlimited)
+* \code{access_code} will be set to FALSE (which will be converted to NULL
+when combined with \code{\link[=create_quizzes]{create_quizzes()}})}
 
-\item{quiz_name_fn}{A function to name the quizzes. Default is `function(x)
-paste("Week", x, "Worksheet", collapse = " ")`. Minimally requires `x`,
+\item{title_fn}{A function to name the quizzes. Default is \code{function(x) paste("Week", x, "Worksheet", collapse = " ")}. Minimally requires \code{x},
 which is a number corresponding to the week of term for that quiz.}
 
 \item{n_questions}{Total number of questions the quiz will contain}
 
 \item{standard_time_limit}{"Standard" amount of time for the quiz. Actual
-quiz length will be 1.5 times longer (for 50% extra time)}
+quiz length will be 1.5 times longer (for 50\% extra time)}
 
 \item{has_break_weeks}{Logical. Does the module you are making quizzes for
 have break weeks (e.g. spring break)?}
@@ -87,10 +92,10 @@ final week of term. In this case the input would be 11:13.}
 }
 \value{
 A tibble of quiz information to pass to
-  [convenrhelpr::create_quizzes()].
+\code{\link[=create_quizzes]{create_quizzes()}}.
 }
 \description{
-Make a tibble of information to use in [cnvs::create_quizzes()].
+Make a tibble of information to use in \code{\link[=create_quizzes]{create_quizzes()}}.
 Specifically designed to make weekly quizzes for worksheets.
 }
 \details{

@@ -17,14 +17,16 @@ embed_link(
 \item{link_text}{The text to be hyperlinked}
 
 \item{dest}{The desination, one of:
-- "website", which will link to `web_url`
-- One of the normal Canvas elements (e.g. "Assignments", "Quizzes")
-- "Zoom" or "Panopto Recordings"
-- A text string that matches the machine-readable page name in the Canvas
-site returned by `search_term`
- If missing, `url` must be provided for a custom link.}
+\itemize{
+\item "website", which will link to \code{web_url}
+\item One of the normal Canvas elements (e.g. "Assignments", "Quizzes")
+\item "Zoom" or "Panopto Recordings"
+\item A text string that matches the machine-readable page name in the Canvas
+site returned by \code{search_term}
+If missing, \code{url} must be provided for a custom link.
+}}
 
-\item{search_term}{Passed to [get_module_id()] to return the module ID}
+\item{search_term}{Passed to \code{\link[=get_module_id]{get_module_id()}} to return the module ID}
 
 \item{type}{What kind of link to produce - "markdown" or "html"}
 

@@ -11,8 +11,8 @@ get_quiz_info(module_id)
 }
 \value{
 A tibble of quiz information include both assignment and ID numbers.
-  Note that these are matched by the name/title of the quiz so THEY MUST BE
-  UNIQUE.
+Note that these are matched by the name/title of the quiz so THEY MUST BE
+UNIQUE.
 }
 \description{
 Get information about the quizzes on a module

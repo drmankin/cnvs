@@ -20,9 +20,9 @@ create_link(
 
 \item{publish}{Boolean. If TRUE the text will be linked, otherwise will just return formatted text with no link}
 
-\item{posit_link}{Whether the link should go to the Posit workspace. Calls [cnvs::create_posit_link()]}
+\item{posit_link}{Whether the link should go to the Posit workspace. Calls \code{\link[=create_posit_link]{create_posit_link()}}}
 
-\item{list_number}{The numerical ID of the Posit list. Only needed if `posit_link = TRUE`.}
+\item{list_number}{The numerical ID of the Posit list. Only needed if \code{posit_link = TRUE}.}
 
 \item{url}{Stem URL to build on for non-Posit links}
 }
@@ -35,8 +35,8 @@ Specifically designed to work with our module website and reference docs.
 }
 \details{
 Assumes that the final (non-Posit) URL will be in the format:
-`url`/`content`s/`content`_`week` (with `week` given a leading 0 if needed)
-So if `content` is `skills_lab` and the `week` is 5, the resulting URL will be:
-`url`/skills_labs/skills_lab_05
+\code{url}/\code{content}s/\code{content}_\code{week} (with \code{week} given a leading 0 if needed)
+So if \code{content} is \code{skills_lab} and the \code{week} is 5, the resulting URL will be:
+\code{url}/skills_labs/skills_lab_05
 Look I'm sorry if that's not how you roll, this function works for me!
 }

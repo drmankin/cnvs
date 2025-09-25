@@ -8,16 +8,16 @@ get_module_list(academic_modules = FALSE, academic_year = NA_character_)
 }
 \arguments{
 \item{academic_modules}{Boolean. Return only academic modules (removing those
-without a course ID code)? Defaults to `FALSE`.}
+without a course ID code)? Defaults to \code{FALSE}.}
 
 \item{academic_year}{Optional string to filter only specific academic
 year(s). Accepts the format e.g. "22/23" or a vector of the same.}
 }
 \value{
 A tibble of information about all the Canvas modules that are
-  currently associated with the Canvas token set by [canvas_setup()].
+currently associated with the Canvas token set by \code{\link[=canvas_setup]{canvas_setup()}}.
 }
 \description{
-Wrapper for `rcanvas` function [rcanvas::get_course_list()] with some extra
+Wrapper for \code{rcanvas} function \code{\link[rcanvas:get_course_list]{rcanvas::get_course_list()}} with some extra
 cleaning for convenience.
 }

@@ -13,6 +13,6 @@ get_users(module_id)
 A tibble of user information
 }
 \description{
-Note that this is different from [cnvs::get_students()] as this gets all
+Note that this is different from \code{\link[=get_students]{get_students()}} as this gets all
 USERS including convenors, observers, DTs etc
 }

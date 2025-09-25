@@ -10,5 +10,5 @@ rcanvas_canvas_url()
 A Canvas API URL
 }
 \description{
-Copied from the unexported `canvas_url()` function from [the {rcanvas} package](https://github.com/daranzolin/rcanvas).
+Copied from the unexported \code{canvas_url()} function from \href{https://github.com/daranzolin/rcanvas}{the {rcanvas} package}.
 }

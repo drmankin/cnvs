@@ -8,7 +8,7 @@ schedule_annc(module_id, annc_path = here::here("announcements"), annc_title)
 }
 \arguments{
 \item{module_id}{The Canvas ID of the module to update (use
-[cnvs::get_module_id()])}
+\code{\link[=get_module_id]{get_module_id()}})}
 
 \item{annc_path}{Path to a folder containing announcements written in qmd files}
 
@@ -20,7 +20,7 @@ Response from Canvas
 \description{
 This function assumes that you have a folder of announcement .qmd files whose
 filenames are the date and time they should be posted in a format readable by
-[lubridate::ymd_hm()], i.e. 202308310900 for 9:00 on August 31st 2023. This
+\code{\link[lubridate:ymd_hms]{lubridate::ymd_hm()}}, i.e. 202308310900 for 9:00 on August 31st 2023. This
 function will find the next closest announcement to the current datetime and
 post it to Canvas delayed until the time indicated in its filename.
 }

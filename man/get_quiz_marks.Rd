@@ -11,7 +11,7 @@ get_quiz_marks(module_code, academic_year, quiz_title = "Worksheet")
 
 \item{academic_year}{A string containing the academic year for the desired
 module as e.g. "22/23"; defaults to the current year as calculated by
-[cnvs::get_ac_year()]. Does not need to be specified for
+\code{\link[=get_ac_year]{get_ac_year()}}. Does not need to be specified for
 ongoing/non-academic modules}
 
 \item{quiz_title}{Common element of the names of all quizzes to be used in
@@ -21,7 +21,7 @@ the calculation. Defaults to "Worksheet".}
 }
 \value{
 A tibble of information about all submissions for all students for
-  all quizzes on a module
+all quizzes on a module
 }
 \description{
 Get a spreadsheet of full info and marks for all quizzes

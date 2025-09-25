@@ -7,7 +7,7 @@
 get_pages(module_id)
 }
 \arguments{
-\item{module_id}{The Canvas ID of the module to update (use [get_module_id()])}
+\item{module_id}{The Canvas ID of the module to update (use \code{\link[=get_module_id]{get_module_id()}})}
 }
 \description{
 Get list of pages for a module

@@ -14,8 +14,8 @@ find_weekday(date, weekday, direction = c("previous", "next"))
 \item{direction}{Either "previous" or "next"}
 }
 \value{
-The date of the next [weekday] before or after the given [date]
+The date of the next \link{weekday} before or after the given \link{date}
 }
 \description{
-Adapted from a [stack overflow solution by TimTeaFan](https://stackoverflow.com/questions/57893554/get-next-wednesday-date-after-a-date-with-r)
+Adapted from a \href{https://stackoverflow.com/questions/57893554/get-next-wednesday-date-after-a-date-with-r}{stack overflow solution by TimTeaFan}
 }

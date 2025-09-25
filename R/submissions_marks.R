@@ -120,6 +120,11 @@ get_quiz_info <- function(module_id){
 
 #' Get a spreadsheet of full info and marks for all quizzes
 #'
+#' If you already have `module_id` stored, you can use it directly.
+#' Otherwise, you can skip that step by providing `module_code` and
+#' `academic_year`.
+#'
+#' @param module_id Canvas module ID code
 #' @param module_code A Sussex module code, e.g. "C8891".
 #' @param academic_year A string containing the academic year for the desired
 #'   module as e.g. "22/23"; defaults to the current year as calculated by
@@ -127,33 +132,34 @@ get_quiz_info <- function(module_id){
 #'   ongoing/non-academic modules
 #' @param quiz_title Common element of the names of all quizzes to be used in
 #'   the calculation. Defaults to "Worksheet".
-#' @param max_score Maximum possible score for the quizzes. Defaults to 7.
 #'
 #' @returns A tibble of information about all submissions for all students for
 #'   all quizzes on a module
 #' @export
 
-get_quiz_marks <- function(module_code,
-                           academic_year,
+get_quiz_marks <- function(module_id, module_code, academic_year,
                            quiz_title = "Worksheet"){
 
   ## Input checks
-  ### Checking module code input and attempting to search for module ID
-  if (!stringr::str_detect(module_code, "^[A-Z]?[0-9]+[A-Z]?[0-9]+")){
-    stop("Module code is not specified correctly. Please enter a module code formatted as C1234 or 123C4.")
-  }
 
-  ## Setting academic year
-  if(missing(academic_year)){
-    academic_year <- cnvs::get_ac_year()
-    message(paste("Using current year", academic_year, "if necessary"))
-  }
+  if(missing(module_id)){
+    ### Checking module code input and attempting to search for module ID
+    if (!stringr::str_detect(module_code, "^[A-Z]?[0-9]+[A-Z]?[0-9]+")){
+      stop("Module code is not specified correctly. Please enter a module code formatted as C1234 or 123C4.")
+    }
 
-  module_id <- try(cnvs::get_module_id(module_code, academic_year = academic_year), silent = TRUE)
+    ## Setting academic year
+    if(missing(academic_year)){
+      academic_year <- cnvs::get_ac_year()
+      message(paste("Using current year", academic_year, "if necessary"))
+    }
 
-  if(inherits(module_id, "try-error")){
-    cnvs::canvas_setup()
-    module_id <- cnvs::get_module_id(module_code, academic_year = academic_year)
+    module_id <- try(cnvs::get_module_id(module_code, academic_year = academic_year), silent = TRUE)
+
+    if(inherits(module_id, "try-error")){
+      cnvs::canvas_setup()
+      module_id <- cnvs::get_module_id(module_code, academic_year = academic_year)
+    }
   }
 
   ## Get student info from Canvas
