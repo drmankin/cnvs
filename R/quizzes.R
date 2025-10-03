@@ -312,36 +312,65 @@ create_quiz_info <- function(module_code, module_id, description = NULL,
 #'
 #' @returns Answer from Canvas; quizzes should appear on Canvas.
 #' @export
+#'
+#'
+#'
 
-create_quizzes <- function(week, title, unlock_at, lock_at, module_id, description,
-                           quiz_type, time_limit, allowed_attempts, access_code){
+create_quizzes <- function(module_id, data){
+  ## Split data by row into a list
+  split_data <- data |>
+    dplyr::rowwise() |>
+    dplyr::group_split()
 
-  quiz_access <- NULL
+  ## Drop columns with NA (to prevent extraneous arguments)
+  split_data <- split_data |>
+    purrr::map(~dplyr::select(.x, where(~all(!is.na(.x)))))
 
-  quiz_access <- if(access_code) paste(sample(0:9, 6, replace = TRUE), collapse = "")
+  ## Convert tibble to argument list
+  data_args <- purrr::map(split_data, ~cnvs::make_args(data = .x, type = "quiz"))
 
-  if(missing(time_limit)){
-    time_limit <- NULL
-  }
-
-  args <- list(
-    access_token = rcanvas:::check_token(),
-    `quiz[title]` = title,
-    `quiz[description]` = description,
-    `quiz[quiz_type]` = quiz_type,
-    `quiz[time_limit]` = time_limit, # NULL for no time limit
-    `quiz[shuffle_answers]` = TRUE,
-    `quiz[hide_results]` = "always",
-    `quiz[allowed_attempts]` = allowed_attempts,
-    `quiz[access_code]` = quiz_access,
-    `quiz[unlock_at]` = unlock_at,
-    `quiz[lock_at]` = lock_at,
-    `quiz[published]` = FALSE
+  ## Post
+  purrr::map(
+    data_args,
+    \(.x) {
+      args <- append(list(access_token = rcanvas:::check_token()), .x)
+      quiz <- rcanvas:::canvas_query(
+        paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes"),
+        args, "POST")
+    }
   )
-  quiz <- rcanvas:::canvas_query(
-    paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes"),
-    args, "POST")
 }
+
+#
+# create_quizzes <- function(week, title, unlock_at, lock_at, module_id, description,
+#                            quiz_type, time_limit, allowed_attempts, access_code){
+#
+#   quiz_access <- NULL
+#
+#   quiz_access <- if(access_code) paste(sample(0:9, 6, replace = TRUE), collapse = "")
+#
+#   if(missing(time_limit)){
+#     time_limit <- NULL
+#   }
+#
+#   args <- list(
+#     access_token = rcanvas:::check_token(),
+#     `quiz[title]` = title,
+#     `quiz[description]` = description,
+#     `quiz[quiz_type]` = quiz_type,
+#     `quiz[time_limit]` = time_limit, # NULL for no time limit
+#     `quiz[shuffle_answers]` = TRUE,
+#     `quiz[hide_results]` = "always",
+#     `quiz[allowed_attempts]` = allowed_attempts,
+#     `quiz[access_code]` = quiz_access,
+#     `quiz[unlock_at]` = unlock_at,
+#     `quiz[lock_at]` = lock_at,
+#     `quiz[published]` = FALSE
+#   )
+#   quiz <- rcanvas:::canvas_query(
+#     paste0("https://canvas.sussex.ac.uk/api/v1/courses/", module_id, "/quizzes"),
+#     args, "POST")
+# }
 
 #' Create a Canvas quiz
 #'
