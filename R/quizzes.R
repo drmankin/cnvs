@@ -423,6 +423,7 @@ create_quiz <- function(module_id, title,  ...){
 #'  * `change_code`: Change the access code for a quiz (to a random six-digit code)
 #'  * `update_description`: Overwrite the description of the quiz.
 #'  * `other`: Any other changes
+#' @param access_code Provide an access code to use; otherwise one will be generated randomly.
 #' @param description Optional - string containing the new description, if using "update_description".
 #' @param other_args List of arguments to pass to Canvas when `task = "other"`. See
 #'   [Canvas API documentation for quizzes](https://canvas.instructure.com/doc/api/quizzes.html#method.quizzes/quizzes_api.create)
@@ -435,7 +436,7 @@ create_quiz <- function(module_id, title,  ...){
 update_quiz <- function(module_code, module_id,
                            search_term, quiz_id,
                            task = c("release_answers", "publish", "change_code", "update_description", "other"),
-                           description,
+                           description, access_code,
                            other_args = list()){
 
   if(missing(module_code) & missing(module_id)){
@@ -469,6 +470,9 @@ update_quiz <- function(module_code, module_id,
     stop("You must provide a new description")
   }
 
+  args <- list(
+    `quiz[access_code]` = paste(sample(0:9, 6, replace = TRUE), collapse = ""))
+
   if(task == "release_answers"){
     args <- list(
       `quiz[hide_results]` = "",
@@ -477,8 +481,13 @@ update_quiz <- function(module_code, module_id,
     args <- list(
       `quiz[published]` = TRUE)
   } else if (task == "change_code"){
-    args <- list(
-      `quiz[access_code]` = paste(sample(0:9, 6, replace = TRUE), collapse = ""))
+    if(!missing(access_code)){
+      args <- list(
+        `quiz[access_code]` = access_code)
+    } else {
+      args <- list(
+        `quiz[access_code]` = paste(sample(0:9, 6, replace = TRUE), collapse = ""))
+    }
   } else if (task == "update_description"){
     args <- list(
       `quiz[description]` = description)
