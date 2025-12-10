@@ -301,15 +301,10 @@ canvas_url <- function(){
 #' To obtain the Canvas domain:
 #'
 #' * Navigate in your browser to your Canvas dashboard
-#' * The Canvas domain is everything after `https://`, typically `canvas.your_uni_domain`, e.g. `canvas.sussex.ac.uk`
+#' * The Canvas domain is the whole uRL, typically `https://canvas.your_uni_domain`, e.g. `https://canvas.sussex.ac.uk`
 #'
 #' @return Sets .Renviron variables and runs [cnvs::canvas_setup()] to communicate with Canvas
 #' @export
-#'
-#' @examples
-#'  \dontrun{
-#'  set_renv_variables()
-#' }
 #'
 set_renv_variables <- function(){
   ## Intro message
@@ -319,6 +314,11 @@ set_renv_variables <- function(){
   scope = c("user", "project")
   path <- usethis:::scoped_path_r(scope, ".Renviron", envvar = "R_ENVIRON_USER")
   renv_lines <- readLines(path)
+
+  ## Needs updating - throws an error if there is no .Renviron file
+    # tryCatch(
+    # {readLines(path)},
+    # error = usethis::edit_r_environ()
 
   ## Check whether variable CANVAS_TOKEN already exists
   if(any(grepl("CANVAS_TOKEN", renv_lines) == TRUE)){
